@@ -15,8 +15,16 @@ gunicorn>=21.2.0
 APScheduler>=3.10.4
 tenacity>=8.2.3
 
-# Local transformer pre-filter (reduces Gemini API calls by ~60-80%)
-# Install torch CPU-only to avoid the full CUDA build (~800MB saved):
-#   pip install torch --index-url https://download.pytorch.org/whl/cpu
-transformers>=4.40.0
-torch>=2.2.0
+# The optional local transformer pre-filter (reduces Gemini API calls by
+# ~60-80%) has been REMOVED from this file on purpose. torch + transformers
+# together need several hundred MB of RAM just to import, before the app
+# does anything else — that's most or all of Render's Starter plan's 512MB
+# total, and was causing the whole server to run out of memory and crash
+# mid-agent-run (visible as repeated 502s on /api/health in the browser).
+# agent.py already falls back cleanly to Gemini-only mode when this
+# library isn't installed, so removing it doesn't break anything, it's a
+# pure cost-saving optimization, not a requirement.
+#
+# If you want it for LOCAL development only (more RAM available there),
+# install it separately, don't add it back to this file:
+#   pip install transformers torch --index-url https://download.pytorch.org/whl/cpu
