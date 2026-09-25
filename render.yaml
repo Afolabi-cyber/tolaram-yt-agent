@@ -1,0 +1,70 @@
+services:
+  - type: web
+    name: tolaram-intelligence
+    runtime: python
+    plan: starter          # cheapest plan that supports an attached persistent disk — required, not optional, for the disk below
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    healthCheckPath: /api/health
+    disk:
+      name: tolaram-data
+      mountPath: /var/data   # matches APP_DATA_DIR below — survives redeploys and restarts
+      sizeGB: 1
+    envVars:
+      - key: APP_DATA_DIR
+        value: /var/data
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: LOG_LEVEL
+        value: INFO
+      # Everything below is a secret — set the real value in the Render
+      # dashboard's Environment tab after the service is created, not here.
+      # render.yaml gets committed to the repo, so these stay blank on purpose.
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CHANNEL_INDOMIE
+        sync: false
+      - key: CHANNEL_COLGATE
+        sync: false
+      - key: CHANNEL_HYPO
+        sync: false
+      - key: CHANNEL_POWER_OIL
+        sync: false
+      - key: CHANNEL_NUTRIFY
+        sync: false
+      - key: CHANNEL_LUSH
+        sync: false
+      - key: CHANNEL_MINIMIE
+        sync: false
+      - key: CHANNEL_MUNCHIT
+        sync: false
+      - key: CRISIS_SMTP_HOST
+        sync: false
+      - key: CRISIS_SMTP_PORT
+        sync: false
+      - key: CRISIS_SMTP_USER
+        sync: false
+      - key: CRISIS_SMTP_PASSWORD
+        sync: false
+      - key: CRISIS_EMAIL_FROM
+        sync: false
+      - key: CRISIS_EMAIL_RECIPIENTS
+        sync: false
+      - key: BRAND_MANAGER_COLGATE
+        sync: false
+      - key: YOUTUBE_ANALYTICS_CLIENT_ID
+        sync: false
+      - key: YOUTUBE_ANALYTICS_CLIENT_SECRET
+        sync: false
+      - key: YOUTUBE_ANALYTICS_REFRESH_TOKEN
+        sync: false
+      # Optional: set a value here (and send it as the X-Agent-Secret header)
+      # if you later want to gate /api/trigger-run, /api/competitors/scan and
+      # /api/competitors/reset. Leave unset for fully public, which is what
+      # was chosen for this deploy.
+      - key: AGENT_API_SECRET
+        sync: false
