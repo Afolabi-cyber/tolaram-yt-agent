@@ -1,0 +1,57 @@
+TOLARAM YOUTUBE INTELLIGENCE AGENT — v2.0 Production Release Documentation
+
+This document provides a comprehensive breakdown of all features, infrastructure upgrades, and dashboard enhancements introduced in the v2.0 Production Release.
+
+================================================================================
+1. CORE INFRASTRUCTURE AND DEPLOYMENT
+================================================================================
+
+Deploying a local Python script requires fundamentally different architecture than running a cloud-ready web application. The v2.0 release bridges this gap.
+
+- Procfile Configuration: Added a `Procfile` containing `web: gunicorn server:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`. This tells cloud platforms (Heroku, Render, Railway) how to boot the application using Gunicorn, a production-grade Web Server Gateway Interface (WSGI).
+- Python Version Pinning: Added `runtime.txt` specifying `python-3.11.9`. This ensures the cloud server builds the exact identical environment used during development, preventing "it works on my machine" bugs.
+- Dependency Upgrades (requirements.txt):
+  - `gunicorn`: The robust HTTP server for production.
+  - `tenacity`: A Python library that handles automatic retries and exponential backoff for external API calls (used to protect against Google API rate limits).
+  - `APScheduler`: A background task scheduler that runs inside the Flask app, replacing the simple `time.sleep()` loop which blocks production servers.
+- Security Headers & GitIgnore: Added a strict `.gitignore` to ensure real API keys (`.env`) and local database files (`data/`) are never leaked to version control. Also added an `.env.example` file that acts as a safe, documented template for new developers.
+
+================================================================================
+2. BACKEND API HARDENING (server.py)
+================================================================================
+
+The Flask server was completely rewritten to support concurrent users, background tasks, and a cleaner Application Factory pattern.
+
+- App Factory Pattern: `server.py` now uses a `create_app()` function. This is the industry standard for Flask applications as it avoids global state issues when Gunicorn boots up multiple worker processes.
+- Background Agent Execution (POST /api/trigger-run): Previously, the agent could only be run from the terminal (`python agent.py`). We added a dedicated API endpoint that spins up a background Python thread. This allows the dashboard UI to trigger the agent without freezing the web server while it waits 2-5 minutes for the AI to classify comments.
+- Thread Locking (Concurrency Safety): Added a `threading.Lock()` named `_agent_lock`. If User A clicks "Execute Agent", the system locks. If User B clicks it 10 seconds later, the server instantly rejects the request with a `409 Conflict: Agent is already running`, preventing the system from fetching the same comments twice simultaneously.
+- Health Polling (GET /api/health): Upgraded the health endpoint to report server uptime, total video/comment counts, and specifically the number of active `crisis_pending` alerts. The dashboard polls this silently in the background.
+
+================================================================================
+3. AI AND DATA ROBUSTNESS
+================================================================================
+
+If Google's Gemini API goes down for 5 seconds, or if the server crashes while writing a file, the system must not collapse.
+
+- Exponential Backoff (gemini_classifier.py): Wrapped all Gemini AI generation calls in a `@retry` decorator. If the AI API throws a 503 error or hits a rate limit, the system doesn't crash. It waits 2 seconds, tries again, waits 4 seconds, etc., up to 30 seconds before finally giving up and gracefully logging an error.
+- Thread-Safe Atomic Storage (data_store.py): When the background agent finishes classifying 50 comments, it must save them to `all_comments.json`. If a user refreshes the dashboard at that exact millisecond, the file read/write operations collide, corrupting the JSON file. We implemented two defenses:
+  1. Per-File Locks: the system checks out a `threading.Lock` specifically for `all_comments.json`. Readers wait for writers to finish.
+  2. Atomic Renames: Data is written to a temporary file (`all_comments.tmp`). Once the write is 100% complete and verified, the OS instantly swaps the `.tmp` file over the real `.json` file. Corruption is mathematically impossible even if the server unplugs mid-write.
+
+================================================================================
+4. DASHBOARD UI/UX ENHANCEMENTS (index.html)
+================================================================================
+
+The dashboard was transformed from a static data viewer into an interactive command center.
+
+- "Execute Agent" Live Control: The button in the sidebar is now wired directly to the backend. Clicking it triggers the background task. The button goes into a disabled `⏳ Starting...` state, then a glowing orange `⚙ Running...` state. A background Javascript interval checks `GET /api/agent-status` every 3 seconds, and automatically refreshes all charts and tables the moment the run completes.
+- CSV Data Export: Added a specific download button to the header: `⬇ Export CSV`. This hits the new `GET /api/export/comments.csv` endpoint, converting the JSON database into a spreadsheet instantly for stakeholders.
+- Content Briefs Tab: We had Gemini generating "Content Strategy Briefs" behind the scenes, but they were invisible. Added a new `✦ Content Briefs` page to the dashboard. It renders AI-generated video concepts, hooks, and optimal upload times based purely on the real questions the audience is asking in the comments.
+- Live Crisis Monitoring: Added a silent Javascript worker that polls the `/api/health` endpoint every 30 seconds. If a new crisis comment comes in via a scheduled background run, the green pulsing "AGENT ACTIVE" dot in the sidebar instantly flashes pink/red, notifying the dashboard user immediately without them needing to refresh the page.
+- Visual Polish: Corrected all metric badges from "Gemini 1.5 Flash" to the correct "Gemini 2.5 Flash". Removed all hardcoded terminal instructions from empty states, replacing them with intuitive GUI cues (e.g. "Click the Execute Agent button").
+
+================================================================================
+SUMMARY
+================================================================================
+
+The agent is now a fully decoupled, async, thread-safe AI application. It gracefully handles API failures, prevents race conditions natively, and abstracts all terminal commands away from the end-user via a polished, reactive dashboard.

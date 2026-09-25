@@ -1,0 +1,5303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tolaram Intelligence Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --void: #07080a;
+      --bg: #0d0f12;
+      --surface: #12151a;
+      --surface-2: #181c23;
+      --surface-3: #1e232d;
+      --border: #252b38;
+      --border-light: #2d3544;
+
+      --electric: #00fff5;
+      --neon-green: #39ff14;
+      --hot-pink: #ff006e;
+      --laser-blue: #00d4ff;
+      --plasma: #b537ff;
+      --warning: #ffb800;
+
+      --text: #f0f4f8;
+      --text-dim: #8895a7;
+      --text-dimmer: #5a6b7d;
+
+      --font-display: 'Archivo', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+      --glow-electric: 0 0 20px rgba(0, 255, 245, 0.3);
+      --glow-green: 0 0 20px rgba(57, 255, 20, 0.3);
+      --glow-pink: 0 0 20px rgba(255, 0, 110, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--void);
+      color: var(--text);
+      font-family: var(--font-display);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated gradient backdrop */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: -100%;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(0, 255, 245, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(181, 55, 255, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(255, 0, 110, 0.04) 0%, transparent 50%);
+      animation: drift 30s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes drift {
+
+      0%,
+      100% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+
+      33% {
+        transform: translate(3%, -3%) rotate(2deg);
+      }
+
+      66% {
+        transform: translate(-3%, 3%) rotate(-2deg);
+      }
+    }
+
+    /* Noise texture */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   LAYOUT
+   ══════════════════════════════════════════════════════════════════ */
+
+    .app-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════════════════════════════ */
+
+    .sidebar {
+      grid-column: 1;
+      grid-row: 1 / -1;
+      background: linear-gradient(180deg, var(--bg) 0%, var(--surface) 100%);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .logo-zone {
+      padding: 32px 24px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(0, 255, 245, 0.03) 0%, transparent 100%);
+    }
+
+    .logo-super {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      color: var(--electric);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      text-shadow: var(--glow-electric);
+    }
+
+    .logo-main {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, #fff 0%, var(--electric) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .agent-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(57, 255, 20, 0.08);
+      border: 1px solid rgba(57, 255, 20, 0.2);
+      border-radius: 30px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--neon-green);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--neon-green);
+      box-shadow: 0 0 8px var(--neon-green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.5;
+        transform: scale(0.9);
+      }
+    }
+
+    /* Nav */
+    .nav {
+      padding: 20px 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .nav-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: var(--text-dimmer);
+      text-transform: uppercase;
+      padding: 16px 12px 6px;
+      font-family: var(--font-mono);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      background: var(--electric);
+      transition: width 0.3s ease;
+    }
+
+    .nav-item:hover {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: var(--border-light);
+      transform: translateX(2px);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(0, 255, 245, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%);
+      color: var(--electric);
+      border-color: rgba(0, 255, 245, 0.2);
+      box-shadow: var(--glow-electric);
+    }
+
+    .nav-item.active::before {
+      width: 3px;
+    }
+
+    .nav-icon {
+      width: 18px;
+      text-align: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      background: var(--hot-pink);
+      color: #000;
+      box-shadow: var(--glow-pink);
+    }
+
+    .nav-badge.warn {
+      background: var(--warning);
+      box-shadow: 0 0 12px rgba(255, 184, 0, 0.3);
+    }
+
+    /* Run Agent CTA */
+    .run-agent-btn {
+      margin: 16px 12px;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, var(--electric) 0%, var(--laser-blue) 100%);
+      border: none;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: #000;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 255, 245, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      transition: all 0.2s;
+      text-transform: uppercase;
+      font-family: var(--font-display);
+    }
+
+    .run-agent-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(0, 255, 245, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .run-agent-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Last Run Footer */
+    .run-footer {
+      padding: 16px 16px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-dimmer);
+      background: var(--surface);
+    }
+
+    .run-footer-label {
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      letter-spacing: 0.1em;
+    }
+
+    .run-footer-time {
+      color: var(--electric);
+      font-weight: 600;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   TOPBAR
+   ══════════════════════════════════════════════════════════════════ */
+
+    .topbar {
+      grid-column: 2;
+      grid-row: 1;
+      height: 72px;
+      background: rgba(13, 15, 18, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .page-title-zone {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .page-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .live-clock {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .refresh-btn {
+      padding: 10px 18px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font-display);
+    }
+
+    .refresh-btn:hover {
+      border-color: var(--electric);
+      color: var(--electric);
+      box-shadow: 0 0 16px rgba(0, 255, 245, 0.2);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   MAIN CONTENT
+   ══════════════════════════════════════════════════════════════════ */
+
+    .content-zone {
+      grid-column: 2;
+      grid-row: 2;
+      padding: 32px 40px 60px;
+      min-height: calc(100vh - 72px);
+    }
+
+    .page {
+      display: none;
+      flex-direction: column;
+      gap: 28px;
+      animation: fadeSlideIn 0.4s ease;
+    }
+
+    .page.active {
+      display: flex;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   HERO STATS ROW
+   ══════════════════════════════════════════════════════════════════ */
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-color, var(--electric)) 0%, transparent 100%);
+      opacity: 0.8;
+    }
+
+    .hero-card::after {
+      content: '';
+      position: absolute;
+      top: 20%;
+      right: -10%;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, var(--accent-color, var(--electric)) 0%, transparent 70%);
+      opacity: 0.04;
+      pointer-events: none;
+    }
+
+    .hero-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dimmer);
+      margin-bottom: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .hero-value {
+      font-size: 42px;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--text);
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-sub {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+    }
+
+    .hero-sub .up {
+      color: var(--neon-green);
+      font-weight: 700;
+    }
+
+    .hero-sub .down {
+      color: var(--hot-pink);
+      font-weight: 700;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   CHART GRID
+   ══════════════════════════════════════════════════════════════════ */
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .chart-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-box.wide {
+      grid-column: span 2;
+    }
+
+    .chart-box.full {
+      grid-column: span 3;
+    }
+
+    .chart-box.tall {
+      min-height: 420px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .chart-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chart-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: rgba(0, 255, 245, 0.1);
+      color: var(--electric);
+      border: 1px solid rgba(0, 255, 245, 0.2);
+      letter-spacing: 0.1em;
+      font-family: var(--font-mono);
+    }
+
+    .chart-canvas-wrap {
+      position: relative;
+      height: 280px;
+    }
+
+    .chart-canvas-wrap.tall {
+      height: 340px;
+    }
+
+    .chart-canvas-wrap.short {
+      height: 220px;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   COMMENTS TABLE
+   ══════════════════════════════════════════════════════════════════ */
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .filter-chip {
+      padding: 8px 18px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font-display);
+    }
+
+    .filter-chip:hover {
+      border-color: var(--border-light);
+      color: var(--text);
+    }
+
+    .filter-chip.active {
+      background: linear-gradient(135deg, rgba(0, 255, 245, 0.15) 0%, rgba(0, 212, 255, 0.1) 100%);
+      border-color: var(--electric);
+      color: var(--electric);
+      box-shadow: 0 0 16px rgba(0, 255, 245, 0.2);
+    }
+
+    .comments-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .comment-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 16px;
+      align-items: start;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .comment-card:hover {
+      border-color: var(--border-light);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .comment-card.crisis {
+      border-color: rgba(255, 0, 110, 0.4);
+      background: linear-gradient(135deg, rgba(255, 0, 110, 0.06) 0%, var(--surface-2) 100%);
+      box-shadow: 0 0 20px rgba(255, 0, 110, 0.15);
+    }
+
+    .comment-card.question {
+      border-left: 3px solid var(--laser-blue);
+    }
+
+    .comment-card.complaint {
+      border-left: 3px solid var(--warning);
+    }
+
+    .comment-card.compliment {
+      border-left: 3px solid var(--neon-green);
+    }
+
+    .comment-tag-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding-top: 4px;
+    }
+
+    .comment-emoji {
+      font-size: 20px;
+    }
+
+    .comment-category-tag {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+    }
+
+    .comment-category-tag.question {
+      background: rgba(0, 212, 255, 0.15);
+      color: var(--laser-blue);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+    }
+
+    .comment-category-tag.complaint {
+      background: rgba(255, 184, 0, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(255, 184, 0, 0.3);
+    }
+
+    .comment-category-tag.compliment {
+      background: rgba(57, 255, 20, 0.15);
+      color: var(--neon-green);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+    }
+
+    .comment-category-tag.crisis {
+      background: rgba(255, 0, 110, 0.2);
+      color: var(--hot-pink);
+      border: 1px solid rgba(255, 0, 110, 0.4);
+      box-shadow: var(--glow-pink);
+    }
+
+    .comment-category-tag.spam {
+      background: rgba(90, 107, 125, 0.15);
+      color: var(--text-dimmer);
+      border: 1px solid rgba(90, 107, 125, 0.3);
+    }
+
+    .comment-content {
+      flex: 1;
+    }
+
+    .comment-author {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--electric);
+      margin-bottom: 8px;
+      font-family: var(--font-mono);
+    }
+
+    .comment-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .comment-reply-box {
+      background: rgba(0, 255, 245, 0.05);
+      border: 1px solid rgba(0, 255, 245, 0.15);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
+    .comment-reply-box::before {
+      content: '↩ Suggested Reply';
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--electric);
+      margin-bottom: 6px;
+      letter-spacing: 0.1em;
+      font-family: var(--font-mono);
+    }
+
+    .comment-meta-col {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .comment-date {
+      font-size: 11px;
+      color: var(--text-dimmer);
+      font-family: var(--font-mono);
+    }
+
+    .comment-brand-pill {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+      font-family: var(--font-mono);
+    }
+
+    .confidence-bar-wrap {
+      width: 56px;
+      margin-top: 4px;
+    }
+
+    .confidence-bar-bg {
+      width: 100%;
+      height: 4px;
+      background: var(--surface-3);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .confidence-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--electric) 0%, var(--neon-green) 100%);
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    .confidence-text {
+      font-size: 9px;
+      color: var(--text-dimmer);
+      margin-top: 3px;
+      text-align: right;
+      font-family: var(--font-mono);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   VIDEO CARDS
+   ══════════════════════════════════════════════════════════════════ */
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .video-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .video-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .video-thumb-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      background: var(--surface-3);
+      overflow: hidden;
+    }
+
+    .video-thumb {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .video-info {
+      padding: 18px;
+    }
+
+    .video-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .video-meta-line {
+      font-size: 11px;
+      color: var(--text-dimmer);
+      margin-bottom: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .video-stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .video-stat {
+      text-align: center;
+    }
+
+    .video-stat-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      font-family: var(--font-display);
+    }
+
+    .video-stat-lbl {
+      font-size: 9px;
+      color: var(--text-dimmer);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 2px;
+      font-family: var(--font-mono);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   INSIGHT BLOCKS
+   ══════════════════════════════════════════════════════════════════ */
+
+    .insight-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .insight-block {
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid rgba(0, 255, 245, 0.2);
+      border-radius: 14px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .insight-block::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      right: -15%;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(0, 255, 245, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .insight-channel-name {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--electric);
+      margin-bottom: 14px;
+      text-shadow: var(--glow-electric);
+    }
+
+    .insight-text {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text-dim);
+      white-space: pre-wrap;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   CRISIS ZONE
+   ══════════════════════════════════════════════════════════════════ */
+
+    .crisis-intro {
+      background: linear-gradient(135deg, rgba(255, 0, 110, 0.08) 0%, var(--surface) 100%);
+      border: 1px solid rgba(255, 0, 110, 0.3);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 0 30px rgba(255, 0, 110, 0.2);
+    }
+
+    .crisis-icon-big {
+      width: 56px;
+      height: 56px;
+      background: rgba(255, 0, 110, 0.15);
+      border: 2px solid rgba(255, 0, 110, 0.4);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .crisis-intro-text h2 {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--hot-pink);
+      margin-bottom: 4px;
+      text-shadow: var(--glow-pink);
+    }
+
+    .crisis-intro-text p {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   MODEL PERFORMANCE
+   ══════════════════════════════════════════════════════════════════ */
+
+    .model-metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .metric-table {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .metric-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-dim);
+    }
+
+    .metric-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      font-family: var(--font-display);
+    }
+
+    .metric-val.green {
+      color: var(--neon-green);
+      text-shadow: var(--glow-green);
+    }
+
+    .metric-val.warn {
+      color: var(--warning);
+    }
+
+    .metric-val.red {
+      color: var(--hot-pink);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   EMPTY STATE
+   ══════════════════════════════════════════════════════════════════ */
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 40px;
+      color: var(--text-dimmer);
+    }
+
+    .empty-icon {
+      font-size: 56px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    .empty-state h3 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .empty-state code {
+      display: inline-block;
+      padding: 12px 24px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--electric);
+      font-family: var(--font-mono);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════════════════════════════ */
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-light);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-dimmer);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   LOADING SPINNER
+   ══════════════════════════════════════════════════════════════════ */
+
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--electric);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-text {
+      font-size: 13px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+   SECTION HEADERS
+   ══════════════════════════════════════════════════════════════════ */
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .section-count {
+      font-size: 12px;
+      color: var(--text-dimmer);
+      font-family: var(--font-mono);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       MONTH PICKER (TOPBAR)
+       ══════════════════════════════════════════════════════════════════ */
+
+    .month-picker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      font-family: var(--font-mono);
+    }
+
+    .month-picker-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .month-picker select {
+      background: transparent;
+      border: none;
+      color: var(--electric);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+      min-width: 140px;
+    }
+
+    .month-picker select option {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    .filter-active-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(0, 255, 245, 0.08);
+      border: 1px solid rgba(0, 255, 245, 0.3);
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--electric);
+      font-family: var(--font-mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       REACH SECTION (VIDEO PAGE)
+       ══════════════════════════════════════════════════════════════════ */
+
+    .reach-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .reach-card {
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .reach-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px; height: 100%;
+      background: var(--accent, var(--electric));
+      box-shadow: 0 0 12px var(--accent, var(--electric));
+    }
+
+    .reach-card-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      font-family: var(--font-mono);
+    }
+
+    .reach-card-value {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: var(--accent, var(--electric));
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .reach-card-sub {
+      font-size: 11px;
+      color: var(--text-dimmer);
+      font-family: var(--font-mono);
+    }
+
+    .reach-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 12px;
+    }
+
+    .reach-table th {
+      background: var(--surface-2);
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .reach-table th.num {
+      text-align: right;
+    }
+
+    .reach-table td {
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    .reach-table td.num {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .reach-table tr:hover td {
+      background: var(--surface-2);
+    }
+
+    .reach-table td.reach-val {
+      color: var(--electric);
+      font-weight: 700;
+    }
+
+    .reach-table .brand-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--surface-3);
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    .reach-table a.video-link {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .reach-table a.video-link:hover {
+      color: var(--electric);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       COMPETITOR ANALYSIS
+       ══════════════════════════════════════════════════════════════════ */
+
+    .competitor-config {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .competitor-add-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .competitor-add-row input,
+    .competitor-add-row select {
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .competitor-add-row input:focus,
+    .competitor-add-row select:focus {
+      border-color: var(--electric);
+      box-shadow: 0 0 0 2px rgba(0, 255, 245, 0.15);
+    }
+
+    .btn-primary {
+      padding: 10px 18px;
+      background: linear-gradient(135deg, var(--electric) 0%, var(--laser-blue) 100%);
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font-display);
+      letter-spacing: 0.03em;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(0, 255, 245, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-ghost {
+      padding: 10px 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font-display);
+      transition: all 0.2s;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--electric);
+      color: var(--electric);
+    }
+
+    .btn-danger {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid rgba(255, 0, 110, 0.4);
+      border-radius: 6px;
+      color: var(--hot-pink);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      letter-spacing: 0.1em;
+    }
+
+    .btn-danger:hover {
+      background: rgba(255, 0, 110, 0.1);
+    }
+
+    .competitor-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .competitor-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .competitor-pill .cp-label {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .competitor-pill .cp-brand {
+      color: var(--plasma);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .competitor-pill .cp-priority {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .cp-priority.primary   { background: rgba(255, 0, 110, 0.12); color: var(--hot-pink);   border: 1px solid rgba(255, 0, 110, 0.3); }
+    .cp-priority.secondary { background: rgba(0, 255, 245, 0.10); color: var(--electric);    border: 1px solid rgba(0, 255, 245, 0.3); }
+    .cp-priority.watch     { background: rgba(136, 149, 167, 0.1); color: var(--text-dim);   border: 1px solid var(--border-light); }
+
+    /* Brand tabs (top of competitor page) */
+    .brand-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .brand-tab {
+      padding: 10px 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-family: var(--font-display);
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-tab:hover {
+      border-color: var(--border-light);
+      color: var(--text);
+    }
+
+    .brand-tab.active {
+      background: linear-gradient(135deg, var(--surface-3) 0%, var(--surface-2) 100%);
+      border-color: var(--electric);
+      color: var(--electric);
+      box-shadow: 0 0 16px rgba(0, 255, 245, 0.15);
+    }
+
+    .brand-tab .bt-count {
+      padding: 2px 8px;
+      background: var(--surface-3);
+      border-radius: 10px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+    }
+
+    .brand-tab.active .bt-count {
+      background: rgba(0, 255, 245, 0.12);
+      color: var(--electric);
+    }
+
+    /* AI strategic brief styling */
+    .ai-brief {
+      background: linear-gradient(135deg, rgba(181, 55, 255, 0.05) 0%, var(--surface-2) 100%);
+      border: 1px solid rgba(181, 55, 255, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 16px;
+    }
+
+    .ai-brief-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(181, 55, 255, 0.2);
+    }
+
+    .ai-brief-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--plasma), #ff37a0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .ai-brief-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--plasma);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .ai-brief-section {
+      margin-bottom: 14px;
+    }
+
+    .ai-brief-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .ai-section-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      font-family: var(--font-mono);
+    }
+
+    .ai-section-label.lag    { color: var(--hot-pink); }
+    .ai-section-label.move   { color: var(--neon-green); }
+    .ai-section-label.lever  { color: var(--warning); }
+
+    .ai-prose {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .ai-bullets {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .ai-bullets li {
+      padding: 8px 0 8px 22px;
+      position: relative;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .ai-bullets li:last-child { border-bottom: none; }
+
+    .ai-bullets li::before {
+      content: '▸';
+      position: absolute;
+      left: 6px;
+      color: var(--electric);
+    }
+
+    .ai-bullets.lag li::before  { color: var(--hot-pink);  content: '✗'; }
+    .ai-bullets.move li::before { color: var(--neon-green); content: '➤'; }
+
+    .move-card {
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--neon-green);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+
+    .move-card.urgency-high   { border-left-color: var(--hot-pink); }
+    .move-card.urgency-medium { border-left-color: var(--warning); }
+    .move-card.urgency-low    { border-left-color: var(--text-dim); }
+
+    .move-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .move-rationale {
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .move-meta {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .urgency-pill {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+    .urgency-pill.high   { background: rgba(255, 0, 110, 0.12); color: var(--hot-pink); }
+    .urgency-pill.medium { background: rgba(255, 184, 0, 0.12); color: var(--warning); }
+    .urgency-pill.low    { background: var(--surface-2); color: var(--text-dim); }
+
+    /* Notes + saved moves */
+    .notes-box, .saved-moves-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 14px;
+    }
+
+    .notes-box-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .note-item {
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .note-item:last-child { border-bottom: none; }
+
+    .note-meta {
+      font-size: 10px;
+      color: var(--text-dimmer);
+      font-family: var(--font-mono);
+      margin-top: 4px;
+    }
+
+    .note-add-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .note-add-row textarea {
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 12px;
+      outline: none;
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .note-add-row textarea:focus,
+    .move-add-row textarea:focus,
+    .move-add-row input:focus {
+      border-color: var(--electric);
+      box-shadow: 0 0 0 2px rgba(0, 255, 245, 0.15);
+    }
+
+    .move-add-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .move-add-row textarea {
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 12px;
+      outline: none;
+      resize: vertical;
+      min-height: 50px;
+      grid-column: 1 / -1;
+    }
+
+    .move-add-row input {
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .move-add-row select {
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .move-status-pill {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      cursor: pointer;
+    }
+    .move-status-pill.planned     { background: var(--surface-3); color: var(--text-dim); }
+    .move-status-pill.in_progress { background: rgba(0, 255, 245, 0.1); color: var(--electric); }
+    .move-status-pill.shipped     { background: rgba(57, 255, 20, 0.1); color: var(--neon-green); }
+    .move-status-pill.dropped     { background: rgba(255, 0, 110, 0.08); color: var(--hot-pink); }
+
+    .competitor-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+
+    .competitor-card-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .competitor-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border-light);
+    }
+
+    .competitor-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .competitor-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-top: 3px;
+    }
+
+    .competitor-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .comp-metric {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .comp-metric-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+    }
+
+    .comp-metric-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--electric);
+      letter-spacing: -0.02em;
+    }
+
+    .competitor-sections {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .comp-section-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .comp-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      font-family: var(--font-mono);
+    }
+
+    .comp-section-title.gap {
+      color: var(--hot-pink);
+    }
+
+    .keyword-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .keyword-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--surface-3);
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text);
+    }
+
+    .keyword-pill .kp-count {
+      color: var(--text-dimmer);
+      font-size: 10px;
+    }
+
+    .keyword-pill.gap {
+      background: rgba(255, 0, 110, 0.08);
+      border-color: rgba(255, 0, 110, 0.3);
+      color: var(--hot-pink);
+    }
+
+    .competitor-videos-list {
+      margin-top: 14px;
+    }
+
+    .competitor-video-row {
+      display: grid;
+      grid-template-columns: 100px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .competitor-video-row:last-child {
+      border-bottom: none;
+    }
+
+    .competitor-video-row img {
+      width: 100px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: var(--surface-2);
+    }
+
+    .cv-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .cv-meta {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    .cv-reach {
+      text-align: right;
+      font-family: var(--font-mono);
+    }
+
+    .cv-reach-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--electric);
+    }
+
+    .cv-reach-lbl {
+      font-size: 9px;
+      color: var(--text-dimmer);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       CAMPAIGN / HASHTAG SEARCH
+       ══════════════════════════════════════════════════════════════════ */
+
+    .hashtag-search-bar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .hashtag-search-bar input {
+      padding: 14px 18px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 600;
+      outline: none;
+    }
+
+    .hashtag-search-bar input:focus {
+      border-color: var(--electric);
+      box-shadow: 0 0 0 2px rgba(0, 255, 245, 0.15);
+    }
+
+    .recent-hashtags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .recent-hashtag-chip {
+      padding: 6px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .recent-hashtag-chip:hover {
+      border-color: var(--electric);
+      color: var(--electric);
+    }
+
+    .platform-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 14px 0;
+    }
+
+    .platform-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-family: var(--font-display);
+      transition: all 0.2s;
+    }
+
+    .platform-tab:hover {
+      border-color: var(--border-light);
+      color: var(--text);
+    }
+
+    .platform-tab.active {
+      background: var(--surface-3);
+      border-color: var(--electric);
+      color: var(--electric);
+      box-shadow: 0 0 16px rgba(0, 255, 245, 0.15);
+    }
+
+    .platform-tab .pt-count {
+      padding: 2px 8px;
+      background: var(--surface-3);
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    .platform-tab.active .pt-count {
+      background: rgba(0, 255, 245, 0.12);
+      color: var(--electric);
+    }
+
+    .platform-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .platform-summary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .platform-summary-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      margin-bottom: 8px;
+    }
+
+    .platform-summary-count {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .platform-summary-count.zero {
+      color: var(--text-dimmer);
+    }
+
+    .post-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .post-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      transition: all 0.2s;
+    }
+
+    .post-card:hover {
+      border-color: var(--border-light);
+    }
+
+    .post-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .post-platform-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      background: var(--surface-3);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .post-platform-badge.youtube   { color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3); }
+    .post-platform-badge.instagram { color: #e1306c; border-color: rgba(225, 48, 108, 0.3); }
+    .post-platform-badge.facebook  { color: #1877f2; border-color: rgba(24, 119, 242, 0.3); }
+    .post-platform-badge.x         { color: #ddd;     border-color: rgba(255, 255, 255, 0.2); }
+    .post-platform-badge.tiktok    { color: #00f2ea; border-color: rgba(0, 242, 234, 0.3); }
+    .post-platform-badge.linkedin  { color: #0a66c2; border-color: rgba(10, 102, 194, 0.3); }
+    .post-platform-badge.threads   { color: #aaa;    border-color: rgba(200, 200, 200, 0.2); }
+
+    .post-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .post-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .post-title a:hover {
+      color: var(--electric);
+    }
+
+    .post-snippet {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.55;
+      margin-bottom: 10px;
+    }
+
+    .post-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 11px;
+      color: var(--text-dimmer);
+      font-family: var(--font-mono);
+    }
+
+    .post-meta .pm-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .post-meta .pm-reach {
+      color: var(--electric);
+      font-weight: 700;
+    }
+
+    .post-url {
+      font-size: 10px;
+      color: var(--text-dimmer);
+      font-family: var(--font-mono);
+      word-break: break-all;
+    }
+
+    .tag-matched {
+      display: inline-block;
+      padding: 1px 7px;
+      background: rgba(57, 255, 20, 0.1);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      border-radius: 4px;
+      color: var(--neon-green);
+      font-size: 9px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .inline-alert {
+      padding: 14px 18px;
+      background: rgba(255, 184, 0, 0.08);
+      border: 1px solid rgba(255, 184, 0, 0.25);
+      border-radius: 10px;
+      color: var(--warning);
+      font-size: 12px;
+      line-height: 1.5;
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-grid">
+    <!-- ══════════════════════════════════════════════════════════════════
+       SIDEBAR
+       ══════════════════════════════════════════════════════════════════ -->
+    <aside class="sidebar">
+      <div class="logo-zone">
+        <div class="logo-super">Tolaram Group</div>
+        <div class="logo-main">INTELLIGENCE</div>
+        <div class="agent-status">
+          <span class="pulse-dot"></span>
+          AGENT ACTIVE
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-label">Overview</div>
+        <div class="nav-item active" onclick="switchPage('overview')">
+          <span class="nav-icon">◈</span>
+          Command Center
+        </div>
+        <div class="nav-item" onclick="switchPage('comments')">
+          <span class="nav-icon">◇</span>
+          Comment Stream
+          <span class="nav-badge warn" id="badge-reply">0</span>
+        </div>
+
+        <div class="nav-label">Analytics</div>
+        <div class="nav-item" onclick="switchPage('videos')">
+          <span class="nav-icon">▶</span>
+          Video Intelligence
+        </div>
+        <div class="nav-item" onclick="switchPage('audience')">
+          <span class="nav-icon">◐</span>
+          Audience Insights
+        </div>
+        <div class="nav-item" onclick="switchPage('insights')">
+          <span class="nav-icon">◈</span>
+          AI Insights
+        </div>
+        <div class="nav-item" onclick="switchPage('briefs')">
+          <span class="nav-icon">✦</span>
+          Content Briefs
+        </div>
+
+        <div class="nav-label">Monitoring</div>
+        <div class="nav-item" onclick="switchPage('crisis')">
+          <span class="nav-icon">⚠</span>
+          Crisis Monitor
+          <span class="nav-badge" id="badge-crisis">0</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('model')">
+          <span class="nav-icon">◉</span>
+          Model Performance
+        </div>
+
+        <div class="nav-label">Intelligence</div>
+        <div class="nav-item" onclick="switchPage('competitors')">
+          <span class="nav-icon">⚔</span>
+          Competitor Analysis
+        </div>
+        <div class="nav-item" onclick="switchPage('campaign')">
+          <span class="nav-icon">#</span>
+          Campaign Search
+        </div>
+        <div class="nav-item" onclick="switchPage('breakdown')">
+          <span class="nav-icon">▦</span>
+          Breakdown
+        </div>
+      </nav>
+
+      <button class="run-agent-btn" id="run-agent-btn" onclick="triggerAgentRun()">
+        ▶ Execute Agent
+      </button>
+
+      <div class="run-footer">
+        <div class="run-footer-label">LAST EXECUTION</div>
+        <div class="run-footer-time" id="last-run-display">Never</div>
+        <div id="last-run-dur" style="margin-top:4px;font-size:9px;"></div>
+      </div>
+    </aside>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+       TOPBAR
+       ══════════════════════════════════════════════════════════════════ -->
+    <header class="topbar">
+      <div class="page-title-zone">
+        <div class="page-title" id="page-title">Command Center</div>
+        <div class="page-subtitle" id="page-subtitle">Real-time YouTube intelligence powered by Gemini AI</div>
+      </div>
+      <div class="topbar-actions">
+        <div class="month-picker">
+          <span class="month-picker-label">Time</span>
+          <select id="month-select" onchange="onMonthChange(this.value)">
+            <option value="">All Time</option>
+          </select>
+        </div>
+        <div class="month-picker">
+          <span class="month-picker-label">Brand</span>
+          <select id="brand-select" onchange="onBrandChange(this.value)">
+            <option value="">All Brands</option>
+          </select>
+        </div>
+        <div class="live-clock" id="live-clock">00:00:00</div>
+        <a class="refresh-btn" href="/api/export/comments.csv" download style="text-decoration:none">⬇ Export CSV</a>
+        <button class="refresh-btn" onclick="loadAllData()">↻ Refresh Data</button>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+       MAIN CONTENT
+       ══════════════════════════════════════════════════════════════════ -->
+    <main class="content-zone">
+
+      <!-- ────────────────────────────────────────────────────────────────
+         OVERVIEW PAGE
+         ──────────────────────────────────────────────────────────────── -->
+      <div class="page active" id="page-overview">
+        <div class="hero-stats" id="hero-stats-container">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading intelligence data...</div>
+          </div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="chart-box wide">
+            <div class="chart-header">
+              <div class="chart-title">
+                Comment Classification Matrix
+                <span class="chart-badge">GEMINI 2.5 FLASH</span>
+              </div>
+            </div>
+            <div class="chart-canvas-wrap">
+              <canvas id="chartCategoryBar"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title">Sentiment Distribution</div>
+            </div>
+            <div class="chart-canvas-wrap short">
+              <canvas id="chartSentiment"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box wide tall">
+            <div class="chart-header">
+              <div class="chart-title">
+                Top Performing Videos
+                <span class="chart-badge">BY VIEWS</span>
+              </div>
+            </div>
+            <div class="chart-canvas-wrap tall">
+              <canvas id="chartTopVideos"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title">Brand Breakdown</div>
+            </div>
+            <div class="chart-canvas-wrap short">
+              <canvas id="chartBrand"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box full">
+            <div class="chart-header">
+              <div class="chart-title">
+                Activity Timeline
+                <span class="chart-badge">LAST 14 RUNS</span>
+              </div>
+            </div>
+            <div class="chart-canvas-wrap">
+              <canvas id="chartTimeline"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+           MODEL ANALYTICS — PIE CHARTS
+           ═══════════════════════════════════════════════════════════════ -->
+        <div style="margin-top:32px;">
+          <div
+            style="font-size:11px;letter-spacing:0.15em;color:var(--text-dim);margin-bottom:16px;padding:14px 20px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;text-transform:uppercase;">
+            ◈ Model Performance Analytics — Classification Intelligence
+          </div>
+          <div class="chart-grid">
+            <div class="chart-box">
+              <div class="chart-header">
+                <div class="chart-title">
+                  Confidence Distribution
+                  <span class="chart-badge">AI ACCURACY</span>
+                </div>
+              </div>
+              <div class="chart-canvas-wrap short">
+                <canvas id="chartConfidencePie"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-box">
+              <div class="chart-header">
+                <div class="chart-title">
+                  Priority Breakdown
+                  <span class="chart-badge">URGENCY</span>
+                </div>
+              </div>
+              <div class="chart-canvas-wrap short">
+                <canvas id="chartPriorityPie"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-box">
+              <div class="chart-header">
+                <div class="chart-title">
+                  Category Distribution
+                  <span class="chart-badge">FULL BREAKDOWN</span>
+                </div>
+              </div>
+              <div class="chart-canvas-wrap short">
+                <canvas id="chartCategoryPie"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────────────
+         COMMENTS PAGE
+         ──────────────────────────────────────────────────────────────── -->
+      <div class="page" id="page-comments">
+        <div class="filter-bar" id="comment-filters">
+          <div class="filter-chip active" data-cat="all" onclick="filterComments('all', this)">All Comments</div>
+          <div class="filter-chip" data-cat="question" onclick="filterComments('question', this)">❓ Questions</div>
+          <div class="filter-chip" data-cat="complaint" onclick="filterComments('complaint', this)">😠 Complaints</div>
+          <div class="filter-chip" data-cat="compliment" onclick="filterComments('compliment', this)">💚 Compliments</div>
+          <div class="filter-chip" data-cat="crisis" onclick="filterComments('crisis', this)">🚨 Crisis</div>
+          <div class="filter-chip" data-cat="spam" onclick="filterComments('spam', this)">🚫 Spam</div>
+        </div>
+        <div class="comments-wrapper" id="comments-container"></div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────────────
+         VIDEOS PAGE
+         ──────────────────────────────────────────────────────────────── -->
+      <div class="page" id="page-videos">
+
+        <!-- Reach summary — month-aware -->
+        <div class="section-header">
+          <div class="section-title">YouTube Reach</div>
+          <div class="section-count" id="reach-filter-label">All time</div>
+        </div>
+        <div class="reach-summary-grid" id="reach-summary-container"></div>
+
+        <!-- Per-brand reach table -->
+        <div class="section-header">
+          <div class="section-title">Reach by Brand</div>
+          <div class="section-count" id="reach-brand-count">—</div>
+        </div>
+        <div style="overflow-x:auto;margin-bottom:28px;">
+          <table class="reach-table" id="reach-brand-table">
+            <thead>
+              <tr>
+                <th>Brand</th>
+                <th class="num">Videos</th>
+                <th class="num">Reach (Views)</th>
+                <th class="num">Likes</th>
+                <th class="num">Comments</th>
+                <th class="num">Avg Reach / Video</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- Per-video reach table -->
+        <div class="section-header">
+          <div class="section-title">Reach by Video</div>
+          <div class="section-count" id="reach-video-count">—</div>
+        </div>
+        <div style="overflow-x:auto;margin-bottom:28px;">
+          <table class="reach-table" id="reach-video-table">
+            <thead>
+              <tr>
+                <th>Video</th>
+                <th>Brand</th>
+                <th>Published</th>
+                <th class="num">Reach</th>
+                <th class="num">Likes</th>
+                <th class="num">Comments</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="chart-box" style="margin-bottom:28px">
+          <div class="chart-header">
+            <div class="chart-title">
+              Engagement Rate Analysis
+              <span class="chart-badge">TOP 10</span>
+            </div>
+          </div>
+          <div class="chart-canvas-wrap tall">
+            <canvas id="chartEngagement"></canvas>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <div class="section-title">All Videos</div>
+          <div class="section-count" id="videos-count">0 videos</div>
+        </div>
+        <div class="video-grid" id="videos-container"></div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────────────
+         INSIGHTS PAGE
+         ──────────────────────────────────────────────────────────────── -->
+      <div class="page" id="page-insights">
+        <div
+          style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:var(--text-dim);line-height:1.6;">
+          ◈ AI-generated performance narratives from Gemini — automatically refreshed with each agent execution
+        </div>
+        <div class="insight-list" id="insights-container"></div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────────────
+         CRISIS PAGE
+         ──────────────────────────────────────────────────────────────── -->
+      <div class="page" id="page-crisis">
+        <div class="crisis-intro">
+          <div class="crisis-icon-big">🚨</div>
+          <div class="crisis-intro-text">
+            <h2>Crisis Monitoring System</h2>
+            <p>Comments flagged as urgent requiring immediate human escalation — no automated responses permitted</p>
+          </div>
+          <button class="btn-secondary" style="font-size:12px;margin-left:auto;white-space:nowrap" onclick="sendCrisisTestEmail(this)">✉ Send Test Email</button>
+        </div>
+        <div class="comments-wrapper" id="crisis-container"></div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────────────
+         MODEL PERFORMANCE PAGE
+         ──────────────────────────────────────────────────────────────── -->
+      <div class="page" id="page-model">
+        <div class="chart-grid">
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title">Confidence Distribution</div>
+            </div>
+            <div class="chart-canvas-wrap short">
+              <canvas id="chartConfidence"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title">Category Breakdown</div>
+            </div>
+            <div class="chart-canvas-wrap short">
+              <canvas id="chartCategoryPie"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title">Processing Stats</div>
+            </div>
+            <div class="chart-canvas-wrap short">
+              <canvas id="chartProcessing"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-box">
+          <div class="chart-header">
+            <div class="chart-title">
+              Model Metrics
+              <span class="chart-badge">GEMINI 2.5 FLASH</span>
+            </div>
+          </div>
+          <div class="model-metrics-grid" id="model-metrics-container"></div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────────────
+         CONTENT BRIEFS PAGE
+         ──────────────────────────────────────────────────────────────── -->
+      <div class="page" id="page-briefs">
+        <div
+          style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:var(--text-dim);line-height:1.6;">
+          ✦ AI-generated content strategy briefs from Gemini — based on your top questions and audience insights
+        </div>
+        <div class="insight-list" id="briefs-container"></div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────────────
+         COMPETITORS PAGE
+         ──────────────────────────────────────────────────────────────── -->
+      <div class="page" id="page-competitors">
+
+        <!-- Brand picker tabs -->
+        <div class="brand-tabs" id="brand-tabs"></div>
+
+        <!-- Per-brand competitor management -->
+        <div class="competitor-config">
+          <div class="section-header" style="margin-bottom:14px;padding:0;">
+            <div class="section-title">Tracked Competitors for <span id="brand-tab-current" style="color:var(--electric)">—</span></div>
+            <div class="section-count" id="comp-count">—</div>
+          </div>
+
+          <div class="competitor-add-row">
+            <input type="text" id="comp-ref-input" placeholder='@handle, UC-id, or "Maggi Nigeria"' />
+            <input type="text" id="comp-label-input" placeholder="Display name" />
+            <select id="comp-priority-input">
+              <option value="primary">Primary</option>
+              <option value="secondary" selected>Secondary</option>
+              <option value="watch">Watch</option>
+            </select>
+            <button class="btn-primary" onclick="addCompetitor()">+ Add</button>
+          </div>
+          <input type="text" id="comp-rationale-input"
+                 placeholder="Why this is a competitor of this brand (optional but useful)"
+                 style="width:100%;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border-light);border-radius:8px;color:var(--text);font-family:var(--font-display);font-size:12px;margin-top:8px;outline:none;" />
+
+          <div class="competitor-list" id="comp-pills" style="margin-top:14px"></div>
+
+          <div style="display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap">
+            <button class="btn-primary" id="comp-scan-btn" onclick="runCompetitorScan()">▶ Scan This Brand</button>
+            <button class="btn-primary" id="comp-scan-all-btn" onclick="runCompetitorScan(true)" style="background:linear-gradient(135deg,var(--plasma) 0%,#8a25cc 100%)">▶ Scan All Brands</button>
+            <button class="btn-ghost" onclick="loadCompetitorAnalysis()">↻ Reload Last Scan</button>
+            <span class="section-count" id="comp-last-scan">Never scanned</span>
+          </div>
+        </div>
+
+        <div id="comp-analysis-container">
+          <div class="empty-state">
+            <div class="empty-icon">⚔</div>
+            <h3>No Competitor Analysis Yet</h3>
+            <p>Pick a brand above and click <strong>Scan This Brand</strong> to generate AI strategic briefs.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────────────
+         CAMPAIGN / HASHTAG SEARCH PAGE
+         ──────────────────────────────────────────────────────────────── -->
+      <div class="page" id="page-campaign">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:var(--text-dim);line-height:1.6;">
+          # Search any hashtag across YouTube, Instagram, Facebook, X/Twitter, TikTok, LinkedIn and Threads. See which platforms carry the campaign, how often, and drill into post content.
+        </div>
+
+        <div class="hashtag-search-bar">
+          <input type="text" id="hashtag-input" placeholder="#ShowSomeLoveToMum"
+                 onkeydown="if(event.key==='Enter')runHashtagSearch()" />
+          <button class="btn-primary" onclick="runHashtagSearch()">Search</button>
+          <button class="btn-ghost" onclick="runHashtagSearch(true)" title="Force fresh search, ignore cache">↻ Refresh</button>
+        </div>
+
+        <div class="recent-hashtags" id="recent-hashtags"></div>
+
+        <div id="hashtag-results-container" style="margin-top:20px;">
+          <div class="empty-state">
+            <div class="empty-icon">#</div>
+            <h3>Search a Campaign Hashtag</h3>
+            <p>Enter a hashtag above (e.g. <strong>#ShowSomeLoveToMum</strong>) to see its cross-platform footprint.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="page-breakdown">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:var(--text-dim);line-height:1.6;">
+          Breakdown of YouTube reach by brand, month and organic-vs-boosted status. Boosted status is
+          set by you after checking a video on Google's <a href="https://adstransparency.google.com" target="_blank" rel="noopener" style="color:var(--electric)">Ads Transparency Center</a> —
+          YouTube's own API doesn't expose whether a video had ad spend behind it, so this isn't auto-detected.
+          Demography now lives on the Audience Insights page instead of here. Ad-placement data still isn't connected to this app.
+        </div>
+
+        <div class="hashtag-search-bar" style="flex-wrap:wrap;gap:10px">
+          <select id="bd-brand-filter" onchange="loadBreakdown()" style="min-width:160px">
+            <option value="">All brands</option>
+          </select>
+          <select id="bd-month-filter" onchange="loadBreakdown()" style="min-width:140px">
+            <option value="">All time</option>
+          </select>
+          <select id="bd-status-filter" onchange="loadBreakdown()" style="min-width:150px">
+            <option value="all">All statuses</option>
+            <option value="organic">Organic only</option>
+            <option value="boosted">Boosted only</option>
+            <option value="unchecked">Unchecked only</option>
+          </select>
+        </div>
+
+        <div class="reach-summary-grid" id="bd-summary-cards" style="margin-top:16px"></div>
+
+        <div class="chart-grid" style="margin-top:16px">
+          <div class="chart-box">
+            <div class="chart-header"><div class="chart-title">Organic vs. Boosted Reach</div></div>
+            <div class="chart-canvas-wrap short">
+              <canvas id="chartBoostedSplit"></canvas>
+            </div>
+          </div>
+          <div class="chart-box wide">
+            <div class="chart-header"><div class="chart-title">Reach by Month</div></div>
+            <div class="chart-canvas-wrap">
+              <canvas id="chartBoostedTimeline"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="comp-section-box" style="margin-top:16px">
+          <div class="comp-section-title">Cross-Platform Campaign Footprint (post counts, not reach — see note above)</div>
+          <div id="bd-platform-posts" style="font-size:12px;color:var(--text-dim)">Loading…</div>
+        </div>
+
+        <div class="comp-section-box" style="margin-top:16px">
+          <div class="comp-section-title">Videos — mark boosted after checking Ads Transparency Center</div>
+          <div id="bd-video-table"></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-audience">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:var(--text-dim);line-height:1.6;">
+          Audience data straight from YouTube Analytics for Tolaram's own channels only — never available for competitors, that's a Google restriction, not a limitation of this app. Requires a one-time OAuth authorization by each channel's owner.
+        </div>
+
+        <div class="hashtag-search-bar" style="flex-wrap:wrap;gap:10px">
+          <select id="aud-brand-select" onchange="loadAudienceInsights()" style="min-width:160px"></select>
+          <select id="aud-days-select" onchange="loadAudienceInsights()" style="min-width:140px">
+            <option value="28">Last 28 days</option>
+            <option value="90" selected>Last 90 days</option>
+            <option value="180">Last 180 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
+          <button class="btn-secondary" style="font-size:12px" onclick="loadAudienceInsights(true)">↻ Refresh (bypass cache)</button>
+        </div>
+
+        <div id="aud-content" style="margin-top:16px"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // ══════════════════════════════════════════════════════════════════════════════
+    // STATE & CONFIG
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    let APP_DATA = null;
+    let ALL_COMMENTS = [];
+    let ALL_VIDEOS   = [];   // full, untruncated video list — APP_DATA.all_videos is capped at 100 across ALL brands, which silently breaks any per-brand filter
+    let ACTIVE_FILTER = 'all';
+    let ACTIVE_MONTH = '';          // '' = all time, or 'YYYY-MM'
+    let ACTIVE_BRAND_FILTER = '';   // '' = all brands, or e.g. 'Indomie'
+    let ACTIVE_PLATFORM = 'all';    // for campaign search page
+    let HASHTAG_DATA = null;        // last hashtag search payload
+    let COMPETITOR_DATA = null;     // last competitor scan payload
+    let CHARTS = {};
+
+    const PAGE_CONFIG = {
+      overview: { title: 'Command Center', subtitle: 'Real-time YouTube intelligence powered by Gemini AI' },
+      comments: { title: 'Comment Stream', subtitle: 'AI-classified comment intelligence with auto-drafted replies' },
+      videos: { title: 'Video Intelligence', subtitle: 'Performance, reach and engagement analytics per video' },
+      insights: { title: 'AI Insights', subtitle: 'Gemini-generated strategic narratives and recommendations' },
+      briefs: { title: 'Content Briefs', subtitle: 'AI-generated content strategy and video ideas from audience questions' },
+      crisis: { title: 'Crisis Monitor', subtitle: 'Urgent alerts requiring immediate human intervention' },
+      model: { title: 'Model Performance', subtitle: 'Classification accuracy and system health metrics' },
+      competitors: { title: 'Competitor Analysis', subtitle: 'What rival brands are doing on YouTube — and what Tolaram isn\'t' },
+      campaign: { title: 'Campaign Search', subtitle: 'Cross-platform hashtag tracking — who\'s posting where' },
+      breakdown: { title: 'Breakdown', subtitle: 'Reach by platform, time and organic vs. boosted — YouTube-verified data only' },
+      audience: { title: 'Audience Insights', subtitle: 'Demographics, geography and watch behavior — YouTube Analytics API, own channels only' }
+    };
+
+    const EMOJI_MAP = {
+      question: '❓',
+      complaint: '😠',
+      compliment: '💚',
+      spam: '🚫',
+      crisis: '🚨',
+      irrelevant: '•',
+      unknown: '?'
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // NAVIGATION
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+      document.getElementById(`page-${pageId}`).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => {
+        if (n.getAttribute('onclick')?.includes(`'${pageId}'`)) {
+          n.classList.add('active');
+        }
+      });
+
+      const config = PAGE_CONFIG[pageId];
+      document.getElementById('page-title').textContent = config.title;
+      document.getElementById('page-subtitle').textContent = config.subtitle;
+
+      // Hide topbar actions on competitor page — it has its own brand tabs
+      const topbarActions = document.querySelector('.topbar-actions');
+      if (topbarActions) topbarActions.style.display = pageId === 'competitors' ? 'none' : '';
+
+      if (pageId === 'model' && APP_DATA) renderModelPage();
+      if (pageId === 'videos' && APP_DATA) renderVideosPage();
+      if (pageId === 'briefs' && APP_DATA) renderBriefs();
+      if (pageId === 'competitors') { loadCompetitorList(); loadCompetitorAnalysis(); }
+      if (pageId === 'campaign') { loadRecentHashtags(); }
+      if (pageId === 'breakdown') { loadBreakdown(); }
+      if (pageId === 'audience') { loadAudienceInsights(); }
+      if (pageId === 'crisis') { loadCrisisReviews(); }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // DATA LOADING
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    async function loadAllData() {
+      try {
+        const [statsRes, commentsRes, monthsRes, videosRes] = await Promise.all([
+          fetch('/api/stats'),
+          fetch('/api/comments'),
+          fetch('/api/months'),
+          fetch('/api/videos'),
+        ]);
+
+        const statsData    = await statsRes.json();
+        const commentsData = await commentsRes.json();
+        const monthsData   = await monthsRes.json();
+        const videosData   = await videosRes.json();
+
+        if (!statsData.ok) throw new Error(statsData.error || 'Failed to load stats');
+
+        APP_DATA     = statsData.data;
+        ALL_COMMENTS = commentsData.data || [];
+        ALL_VIDEOS   = videosData.ok ? (videosData.data || []) : (APP_DATA.all_videos || []);
+
+        if (monthsData.ok) populateMonthDropdown(monthsData.data);
+        populateBrandDropdown();
+
+        renderEverything();
+      } catch (err) {
+        console.error('Load error:', err);
+        showEmptyState();
+      }
+    }
+
+    function showEmptyState() {
+      document.getElementById('hero-stats-container').innerHTML = `
+    <div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">◌</div>
+      <h3>No Intelligence Data</h3>
+      <p>Click <strong>Execute Agent</strong> in the sidebar to begin collecting and classifying YouTube data.</p>
+    </div>`;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // RENDERING ORCHESTRATOR
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function renderEverything() {
+      if (!APP_DATA) return;
+
+      updateNavBadges();
+      updateLastRun();
+      renderHeroStats();
+      renderAllCharts();
+      updateCommentChipCounts();
+      renderComments(ALL_COMMENTS, ACTIVE_FILTER);
+      renderInsights();
+      renderBriefs();
+      renderCrisis();
+    }
+
+    function updateNavBadges() {
+      const s = APP_DATA.summary;
+      document.getElementById('badge-crisis').textContent = s.crisis_count || 0;
+      document.getElementById('badge-reply').textContent = s.needs_reply_count || 0;
+    }
+
+    function updateLastRun() {
+      const lr = APP_DATA.latest_run;
+      if (lr?.started_at) {
+        const d = new Date(lr.started_at);
+        document.getElementById('last-run-display').textContent = d.toLocaleString();
+        document.getElementById('last-run-dur').textContent = `Duration: ${lr.duration_seconds || 0}s`;
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // HERO STATS CARDS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function renderHeroStats() {
+      const s = APP_DATA.summary;
+      const crisisCount = s.crisis_count || 0;
+
+      // If either filter is active, compute filtered totals
+      const isFiltered = ACTIVE_MONTH || ACTIVE_BRAND_FILTER;
+      let filteredStats = null;
+      if (isFiltered) {
+        let videos   = ALL_VIDEOS || [];
+        let comments = ALL_COMMENTS || [];
+        if (ACTIVE_MONTH) {
+          videos   = videos.filter(v => (v.published_at || '').startsWith(ACTIVE_MONTH));
+          comments = comments.filter(c => (c.published_at || '').startsWith(ACTIVE_MONTH));
+        }
+        if (ACTIVE_BRAND_FILTER) {
+          videos   = videos.filter(v => v.brand === ACTIVE_BRAND_FILTER);
+          comments = comments.filter(c => c.brand === ACTIVE_BRAND_FILTER);
+        }
+        filteredStats = {
+          videos:   videos.length,
+          comments: comments.length,
+          reach:    videos.reduce((a, v) => a + (v.view_count || 0), 0),
+          crisis:   comments.filter(c => c.crisis_flag).length,
+        };
+      }
+
+      const filterTag = [
+        ACTIVE_MONTH ? ACTIVE_MONTH : null,
+        ACTIVE_BRAND_FILTER ? ACTIVE_BRAND_FILTER : null,
+      ].filter(Boolean).join(' · ') || 'Filtered';
+
+      const cards = filteredStats ? [
+        {
+          label: `Comments · ${filterTag}`,
+          value: formatNumber(filteredStats.comments),
+          sub: `Filtered view`,
+          color: '#00d4ff'
+        },
+        {
+          label: `Videos · ${filterTag}`,
+          value: formatNumber(filteredStats.videos),
+          sub: ACTIVE_MONTH ? 'Published in window' : 'In this brand',
+          color: '#00fff5'
+        },
+        {
+          label: `Reach · ${filterTag}`,
+          value: formatNumber(filteredStats.reach),
+          sub: 'Total YouTube views',
+          color: '#b537ff'
+        },
+        {
+          label: 'Crisis Alerts',
+          value: filteredStats.crisis,
+          sub: filteredStats.crisis > 0 ? '<span class="down">⚠ Needs review</span>' : '<span class="up">✓ Clean</span>',
+          color: filteredStats.crisis > 0 ? '#ff006e' : '#39ff14'
+        },
+        {
+          label: 'All-Time Comments',
+          value: formatNumber(s.total_comments),
+          sub: `Lifetime · ${s.model_accuracy_pct || 0}% accuracy`,
+          color: '#ffb800'
+        }
+      ] : [
+        {
+          label: 'Total Comments',
+          value: formatNumber(s.total_comments),
+          sub: `Across ${formatNumber(s.total_videos)} videos`,
+          color: '#00d4ff'
+        },
+        {
+          label: 'AI Classified',
+          value: formatNumber(s.total_comments),
+          sub: `${s.model_accuracy_pct || 0}% accuracy`,
+          color: '#00fff5'
+        },
+        {
+          label: 'Crisis Alerts',
+          value: crisisCount,
+          sub: crisisCount > 0 ? '<span class="down">⚠ URGENT ACTION</span>' : '<span class="up">✓ All Clear</span>',
+          color: crisisCount > 0 ? '#ff006e' : '#39ff14'
+        },
+        {
+          label: 'Needs Reply',
+          value: s.needs_reply_count || 0,
+          sub: 'Questions + Complaints',
+          color: '#ffb800'
+        },
+        {
+          label: 'Channels Active',
+          value: s.total_channels || 0,
+          sub: `${formatNumber(s.total_subscribers)} subscribers`,
+          color: '#b537ff'
+        }
+      ];
+
+      document.getElementById('hero-stats-container').innerHTML = cards.map(c => `
+    <div class="hero-card" style="--accent-color:${c.color}">
+      <div class="hero-label">${c.label}</div>
+      <div class="hero-value">${c.value}</div>
+      <div class="hero-sub">${c.sub}</div>
+    </div>
+  `).join('');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // CHARTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    const CHART_DEFAULTS = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: '#8895a7',
+            font: { family: 'JetBrains Mono', size: 11 },
+            boxWidth: 12,
+            padding: 12
+          }
+        }
+      }
+    };
+
+    function destroyChart(id) {
+      if (CHARTS[id]) {
+        CHARTS[id].destroy();
+        delete CHARTS[id];
+      }
+    }
+
+    function renderAllCharts() {
+      // If a filter is active, recompute the breakdowns from filtered comments + videos
+      let cats     = APP_DATA.by_category || {};
+      let sents    = APP_DATA.by_sentiment || {};
+      let brands   = APP_DATA.by_brand || {};
+      let topVids  = APP_DATA.top_videos || [];
+      const runHistory = APP_DATA.run_history || [];
+
+      const isFiltered = ACTIVE_MONTH || ACTIVE_BRAND_FILTER;
+      if (isFiltered) {
+        let comments = ALL_COMMENTS || [];
+        let videos   = ALL_VIDEOS || [];
+        if (ACTIVE_MONTH) {
+          comments = comments.filter(c => (c.published_at || '').startsWith(ACTIVE_MONTH));
+          videos   = videos.filter(v => (v.published_at || '').startsWith(ACTIVE_MONTH));
+        }
+        if (ACTIVE_BRAND_FILTER) {
+          comments = comments.filter(c => c.brand === ACTIVE_BRAND_FILTER);
+          videos   = videos.filter(v => v.brand === ACTIVE_BRAND_FILTER);
+        }
+        cats = {};   comments.forEach(c => { const k = c.category  || 'unknown'; cats[k]  = (cats[k]  || 0) + 1; });
+        sents = {};  comments.forEach(c => { const k = c.sentiment || 'neutral'; sents[k] = (sents[k] || 0) + 1; });
+        brands = {}; comments.forEach(c => { const k = c.brand     || 'Unknown'; brands[k] = (brands[k] || 0) + 1; });
+        topVids = [...videos]
+          .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+          .slice(0, 8)
+          .map(v => ({ title: v.title, view_count: v.view_count, like_count: v.like_count }));
+      }
+
+      const CAT_COLORS = {
+        question: '#00d4ff',
+        complaint: '#ffb800',
+        compliment: '#39ff14',
+        spam: '#5a6b7d',
+        crisis: '#ff006e',
+        irrelevant: '#2d3544',
+        unknown: '#363c4f'
+      };
+
+      // Category bar chart
+      destroyChart('categoryBar');
+      const catCtx = document.getElementById('chartCategoryBar');
+      if (catCtx && Object.keys(cats).length) {
+        const labels = Object.keys(cats);
+        CHARTS.categoryBar = new Chart(catCtx, {
+          type: 'bar',
+          data: {
+            labels: labels.map(l => l.toUpperCase()),
+            datasets: [{
+              data: Object.values(cats),
+              backgroundColor: labels.map(l => CAT_COLORS[l] || '#363c4f'),
+              borderRadius: 6,
+              borderSkipped: false
+            }]
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } },
+            scales: {
+              x: {
+                ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 11 } },
+                grid: { color: '#252b38' }
+              },
+              y: {
+                ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 11 } },
+                grid: { color: '#252b38' }
+              }
+            }
+          }
+        });
+      }
+
+      // Sentiment doughnut
+      destroyChart('sentiment');
+      const sentCtx = document.getElementById('chartSentiment');
+      if (sentCtx && Object.keys(sents).length) {
+        CHARTS.sentiment = new Chart(sentCtx, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(sents).map(s => s.toUpperCase()),
+            datasets: [{
+              data: Object.values(sents),
+              backgroundColor: ['#39ff14', '#8895a7', '#ff006e'],
+              borderColor: '#0d0f12',
+              borderWidth: 4
+            }]
+          },
+          options: { ...CHART_DEFAULTS, cutout: '72%' }
+        });
+      }
+
+      // Top videos horizontal bar
+      destroyChart('topVideos');
+      const topVidCtx = document.getElementById('chartTopVideos');
+      if (topVidCtx && topVids.length) {
+        CHARTS.topVideos = new Chart(topVidCtx, {
+          type: 'bar',
+          data: {
+            labels: topVids.map(v => truncate(v.title, 30)),
+            datasets: [
+              { label: 'Views', data: topVids.map(v => v.view_count), backgroundColor: 'rgba(0,212,255,0.7)', borderRadius: 4 },
+              { label: 'Likes', data: topVids.map(v => v.like_count), backgroundColor: 'rgba(0,255,245,0.6)', borderRadius: 4 }
+            ]
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            indexAxis: 'y',
+            scales: {
+              x: { ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#252b38' } },
+              y: { ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'transparent' } }
+            }
+          }
+        });
+      }
+
+      // Brand doughnut
+      destroyChart('brand');
+      const brandCtx = document.getElementById('chartBrand');
+      if (brandCtx && Object.keys(brands).length) {
+        CHARTS.brand = new Chart(brandCtx, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(brands),
+            datasets: [{
+              data: Object.values(brands),
+              backgroundColor: ['#00fff5', '#00d4ff', '#ffb800', '#b537ff', '#39ff14'],
+              borderColor: '#0d0f12',
+              borderWidth: 4
+            }]
+          },
+          options: { ...CHART_DEFAULTS, cutout: '70%' }
+        });
+      }
+
+      // Activity timeline
+      destroyChart('timeline');
+      const timeCtx = document.getElementById('chartTimeline');
+      if (timeCtx && runHistory.length) {
+        CHARTS.timeline = new Chart(timeCtx, {
+          type: 'line',
+          data: {
+            labels: runHistory.map(r => r.date || '—'),
+            datasets: [{
+              label: 'Comments Classified',
+              data: runHistory.map(r => r.comments || 0),
+              borderColor: '#00fff5',
+              backgroundColor: 'rgba(0,255,245,0.1)',
+              fill: true,
+              tension: 0.4,
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: '#00fff5',
+              pointBorderColor: '#0d0f12',
+              pointBorderWidth: 2
+            }]
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            scales: {
+              x: { ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#252b38' } },
+              y: { ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#252b38' } }
+            }
+          }
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // PIE CHARTS — Model Analytics
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      // Confidence Distribution Pie
+      destroyChart('confidencePie');
+      const confPieCtx = document.getElementById('chartConfidencePie');
+      if (confPieCtx && ALL_COMMENTS.length) {
+        const highConf = ALL_COMMENTS.filter(c => (c.classification_confidence || 0) >= 0.8).length;
+        const medConf = ALL_COMMENTS.filter(c => {
+          const conf = c.classification_confidence || 0;
+          return conf >= 0.5 && conf < 0.8;
+        }).length;
+        const lowConf = ALL_COMMENTS.filter(c => {
+          const conf = c.classification_confidence || 0;
+          return conf > 0 && conf < 0.5;
+        }).length;
+
+        CHARTS.confidencePie = new Chart(confPieCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['High (≥80%)', 'Medium (50-79%)', 'Low (<50%)'],
+            datasets: [{
+              data: [highConf, medConf, lowConf],
+              backgroundColor: ['#39ff14', '#ffb800', '#ff006e'],
+              borderColor: '#0d0f12',
+              borderWidth: 4
+            }]
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            cutout: '68%',
+            plugins: {
+              ...CHART_DEFAULTS.plugins,
+              legend: {
+                display: true,
+                position: 'bottom',
+                labels: {
+                  color: '#8895a7',
+                  font: { family: 'JetBrains Mono', size: 10 },
+                  padding: 12,
+                  boxWidth: 12
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Priority Breakdown Pie
+      destroyChart('priorityPie');
+      const priorPieCtx = document.getElementById('chartPriorityPie');
+      if (priorPieCtx && ALL_COMMENTS.length) {
+        const urgentCount = ALL_COMMENTS.filter(c => c.priority === 'urgent').length;
+        const highCount = ALL_COMMENTS.filter(c => c.priority === 'high').length;
+        const medCount = ALL_COMMENTS.filter(c => c.priority === 'medium').length;
+        const lowCount = ALL_COMMENTS.filter(c => c.priority === 'low').length;
+
+        CHARTS.priorityPie = new Chart(priorPieCtx, {
+          type: 'pie',
+          data: {
+            labels: ['Urgent', 'High', 'Medium', 'Low'],
+            datasets: [{
+              data: [urgentCount, highCount, medCount, lowCount],
+              backgroundColor: ['#ff006e', '#ff4d6d', '#ffb800', '#8895a7'],
+              borderColor: '#0d0f12',
+              borderWidth: 3
+            }]
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            plugins: {
+              ...CHART_DEFAULTS.plugins,
+              legend: {
+                display: true,
+                position: 'bottom',
+                labels: {
+                  color: '#8895a7',
+                  font: { family: 'JetBrains Mono', size: 10 },
+                  padding: 12,
+                  boxWidth: 12
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Category Distribution Pie
+      destroyChart('categoryPie');
+      const catPieCtx = document.getElementById('chartCategoryPie');
+      if (catPieCtx && Object.keys(cats).length) {
+        const CAT_COLORS_PIE = {
+          question: '#00d4ff',
+          complaint: '#ff006e',
+          compliment: '#39ff14',
+          spam: '#6c757d',
+          crisis: '#ff3b3b',
+          irrelevant: '#495057',
+          unknown: '#6c757d'
+        };
+
+        const labels = Object.keys(cats);
+        CHARTS.categoryPie = new Chart(catPieCtx, {
+          type: 'pie',
+          data: {
+            labels: labels.map(l => l.toUpperCase()),
+            datasets: [{
+              data: Object.values(cats),
+              backgroundColor: labels.map(l => CAT_COLORS_PIE[l] || '#6c757d'),
+              borderColor: '#0d0f12',
+              borderWidth: 3
+            }]
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            plugins: {
+              ...CHART_DEFAULTS.plugins,
+              legend: {
+                display: true,
+                position: 'bottom',
+                labels: {
+                  color: '#8895a7',
+                  font: { family: 'JetBrains Mono', size: 10 },
+                  padding: 12,
+                  boxWidth: 12
+                }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // COMMENTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function filterComments(cat, elem) {
+      ACTIVE_FILTER = cat;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      elem.classList.add('active');
+      renderComments(ALL_COMMENTS, cat);
+    }
+
+    function renderComments(comments, filter) {
+      let filtered = filter === 'all' ? comments : comments.filter(c => c.category === filter);
+      if (ACTIVE_MONTH) {
+        filtered = filtered.filter(c => (c.published_at || '').startsWith(ACTIVE_MONTH));
+      }
+      if (ACTIVE_BRAND_FILTER) {
+        filtered = filtered.filter(c => c.brand === ACTIVE_BRAND_FILTER);
+      }
+      const container = document.getElementById('comments-container');
+
+      if (!filtered.length) {
+        const filterDesc = [
+          ACTIVE_MONTH ? ACTIVE_MONTH : null,
+          ACTIVE_BRAND_FILTER ? ACTIVE_BRAND_FILTER : null,
+        ].filter(Boolean).join(' · ');
+        container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">◌</div>
+        <h3>No Comments${filterDesc ? ' for ' + filterDesc : ''}</h3>
+        <p>${filterDesc ? 'Try different filters or clear them.' : 'Click <strong>Execute Agent</strong> in the sidebar to collect and classify comments.'}</p>
+      </div>`;
+        return;
+      }
+
+      const sorted = [...filtered].sort((a, b) => {
+        const pOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+        return (pOrder[a.priority] || 3) - (pOrder[b.priority] || 3);
+      });
+
+      container.innerHTML = sorted.slice(0, 100).map(c => {
+        const cat = c.category || 'irrelevant';
+        const conf = Math.round((c.classification_confidence || 0) * 100);
+        const date = c.published_at ? new Date(c.published_at).toLocaleDateString() : '—';
+
+        return `
+      <div class="comment-card ${cat} ${c.crisis_flag ? 'crisis' : ''}">
+        <div class="comment-tag-col">
+          <div class="comment-emoji">${EMOJI_MAP[cat] || '•'}</div>
+          <div class="comment-category-tag ${cat}">${cat}</div>
+        </div>
+
+        <div class="comment-content">
+          <div class="comment-author">@${escapeHtml(c.author || 'unknown')}</div>
+          <div class="comment-text">${escapeHtml(c.text || '')}</div>
+          ${c.suggested_reply ? `<div class="comment-reply-box">${escapeHtml(c.suggested_reply)}</div>` : ''}
+          ${c.ai_summary ? `<div style="font-size:11px;color:var(--text-dimmer);margin-top:8px;font-family:var(--font-mono)">AI: ${escapeHtml(c.ai_summary)}</div>` : ''}
+        </div>
+
+        <div class="comment-meta-col">
+          <div class="comment-date">${date}</div>
+          <div class="comment-brand-pill">${c.brand || '—'}</div>
+          <div class="confidence-bar-wrap">
+            <div class="confidence-bar-bg">
+              <div class="confidence-bar-fill" style="width:${conf}%"></div>
+            </div>
+            <div class="confidence-text">${conf}%</div>
+          </div>
+        </div>
+      </div>
+    `;
+      }).join('');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // VIDEOS + REACH
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function filterVideosByMonth(videos, month) {
+      if (!month) return videos;
+      return videos.filter(v => (v.published_at || '').startsWith(month));
+    }
+
+    async function renderVideosPage() {
+      if (!APP_DATA) return;
+
+      const allVideos = ALL_VIDEOS || [];
+      let filteredVideos = filterVideosByMonth(allVideos, ACTIVE_MONTH);
+      if (ACTIVE_BRAND_FILTER) {
+        filteredVideos = filteredVideos.filter(v => v.brand === ACTIVE_BRAND_FILTER);
+      }
+
+      document.getElementById('videos-count').textContent = `${filteredVideos.length} videos`;
+
+      // Fetch reach data (server-side aggregation, month-aware)
+      await renderReachSection();
+
+      // Engagement chart — uses month-filtered videos
+      destroyChart('engagement');
+      const sortedByEng = [...filteredVideos]
+        .sort((a, b) => (b.engagement_rate || 0) - (a.engagement_rate || 0))
+        .slice(0, 10);
+      const engCtx = document.getElementById('chartEngagement');
+      if (engCtx && sortedByEng.length) {
+        CHARTS.engagement = new Chart(engCtx, {
+          type: 'bar',
+          data: {
+            labels: sortedByEng.map(v => truncate(v.title, 25)),
+            datasets: [{
+              label: 'Engagement Rate (%)',
+              data: sortedByEng.map(v => v.engagement_rate || 0),
+              backgroundColor: 'rgba(0,255,245,0.7)',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#8895a7', font: { size: 10 } }, grid: { color: '#252b38' } },
+              y: { ticks: { color: '#8895a7', font: { size: 10 } }, grid: { color: '#252b38' } }
+            }
+          }
+        });
+      }
+
+      // Video grid — month-filtered, sorted by reach (views)
+      const sorted = [...filteredVideos].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+      document.getElementById('videos-container').innerHTML = sorted.slice(0, 100).map(v => `
+    <div class="video-card">
+      <div class="video-thumb-wrap">
+        <img class="video-thumb" src="${v.thumbnail || ''}" alt="" onerror="this.style.display='none'">
+      </div>
+      <div class="video-info">
+        <div class="video-title">${escapeHtml(v.title || 'Untitled')}</div>
+        <div class="video-meta-line">${v.published_at ? new Date(v.published_at).toLocaleDateString() : '—'} · ${v.brand || v.channel_label || '—'}</div>
+        <div class="video-stats-row">
+          <div class="video-stat">
+            <div class="video-stat-val" style="color:var(--electric)">${formatNumber(v.view_count)}</div>
+            <div class="video-stat-lbl">Reach</div>
+          </div>
+          <div class="video-stat">
+            <div class="video-stat-val">${formatNumber(v.like_count)}</div>
+            <div class="video-stat-lbl">Likes</div>
+          </div>
+          <div class="video-stat">
+            <div class="video-stat-val">${formatNumber(v.comment_count)}</div>
+            <div class="video-stat-lbl">Comments</div>
+          </div>
+          <div class="video-stat">
+            <div class="video-stat-val" style="color:var(--neon-green)">${v.engagement_rate || '—'}%</div>
+            <div class="video-stat-lbl">Engage</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+      if (!sorted.length) {
+        document.getElementById('videos-container').innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">◌</div>
+        <h3>No videos in ${ACTIVE_MONTH || 'this period'}</h3>
+        <p>Try a different month or clear the filter.</p>
+      </div>`;
+      }
+
+    }
+
+    // ── Reach section: per-brand, per-video tables + summary cards ────────────
+
+    async function renderReachSection() {
+      const qs = new URLSearchParams();
+      if (ACTIVE_MONTH) qs.set('month', ACTIVE_MONTH);
+      if (ACTIVE_BRAND_FILTER) qs.set('brand', ACTIVE_BRAND_FILTER);
+
+      let reach;
+      try {
+        const r = await fetch('/api/reach' + (qs.toString() ? '?' + qs : ''));
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.error || 'reach fetch failed');
+        reach = j.data;
+      } catch (e) {
+        console.warn('Reach fetch error:', e);
+        return;
+      }
+
+      // Filter label
+      const labelEl = document.getElementById('reach-filter-label');
+      const lbl = [
+        ACTIVE_MONTH ? ACTIVE_MONTH : null,
+        ACTIVE_BRAND_FILTER ? ACTIVE_BRAND_FILTER : null,
+      ].filter(Boolean).join(' · ') || 'All time';
+      if (labelEl) labelEl.textContent = `Filtered: ${lbl}`.replace('Filtered: All time', 'All time');
+
+      // Summary cards
+      const t = reach.totals || {};
+      const avgReach = t.videos ? Math.round(t.reach / t.videos) : 0;
+      const engagePct = t.reach ? ((t.likes + t.comments) / t.reach * 100).toFixed(2) : '0';
+
+      document.getElementById('reach-summary-container').innerHTML = `
+        <div class="reach-card" style="--accent:var(--electric)">
+          <div class="reach-card-label">Total Reach</div>
+          <div class="reach-card-value">${formatNumber(t.reach || 0)}</div>
+          <div class="reach-card-sub">${formatNumber(t.videos || 0)} videos · views</div>
+        </div>
+        <div class="reach-card" style="--accent:var(--neon-green)">
+          <div class="reach-card-label">Avg Reach / Video</div>
+          <div class="reach-card-value" style="color:var(--neon-green)">${formatNumber(avgReach)}</div>
+          <div class="reach-card-sub">Across ${formatNumber(t.videos || 0)} videos</div>
+        </div>
+        <div class="reach-card" style="--accent:var(--laser-blue)">
+          <div class="reach-card-label">Total Likes</div>
+          <div class="reach-card-value" style="color:var(--laser-blue)">${formatNumber(t.likes || 0)}</div>
+          <div class="reach-card-sub">Across all videos</div>
+        </div>
+        <div class="reach-card" style="--accent:var(--plasma)">
+          <div class="reach-card-label">Total Comments</div>
+          <div class="reach-card-value" style="color:var(--plasma)">${formatNumber(t.comments || 0)}</div>
+          <div class="reach-card-sub">Audience signal</div>
+        </div>
+        <div class="reach-card" style="--accent:var(--warning)">
+          <div class="reach-card-label">Engagement Rate</div>
+          <div class="reach-card-value" style="color:var(--warning)">${engagePct}%</div>
+          <div class="reach-card-sub">(Likes + Comments) / Reach</div>
+        </div>
+      `;
+
+      // Per-brand table
+      const brandRows = (reach.per_brand || []).map(b => {
+        const avg = b.videos ? Math.round(b.reach / b.videos) : 0;
+        return `
+          <tr>
+            <td><span class="brand-chip">${escapeHtml(b.brand)}</span></td>
+            <td class="num">${formatNumber(b.videos)}</td>
+            <td class="num reach-val">${formatNumber(b.reach)}</td>
+            <td class="num">${formatNumber(b.likes)}</td>
+            <td class="num">${formatNumber(b.comments)}</td>
+            <td class="num">${formatNumber(avg)}</td>
+          </tr>`;
+      }).join('');
+      document.querySelector('#reach-brand-table tbody').innerHTML = brandRows
+        || `<tr><td colspan="6" style="text-align:center;color:var(--text-dimmer);padding:30px">No videos in this period</td></tr>`;
+      document.getElementById('reach-brand-count').textContent = `${(reach.per_brand || []).length} brands`;
+
+      // Per-video table (top 50)
+      const videoRows = (reach.per_video || []).slice(0, 50).map(v => {
+        const url  = v.video_url || `https://www.youtube.com/watch?v=${v.video_id}`;
+        const date = v.published_at ? new Date(v.published_at).toLocaleDateString() : '—';
+        return `
+          <tr>
+            <td><a class="video-link" href="${url}" target="_blank" rel="noopener">${escapeHtml(truncate(v.title || 'Untitled', 70))}</a></td>
+            <td><span class="brand-chip">${escapeHtml(v.brand || '—')}</span></td>
+            <td>${date}</td>
+            <td class="num reach-val">${formatNumber(v.reach)}</td>
+            <td class="num">${formatNumber(v.likes)}</td>
+            <td class="num">${formatNumber(v.comments)}</td>
+          </tr>`;
+      }).join('');
+      document.querySelector('#reach-video-table tbody').innerHTML = videoRows
+        || `<tr><td colspan="6" style="text-align:center;color:var(--text-dimmer);padding:30px">No videos to show</td></tr>`;
+      document.getElementById('reach-video-count').textContent = `Showing top ${Math.min(50, (reach.per_video || []).length)} of ${formatNumber(t.videos || 0)}`;
+    }
+
+    // ── Month picker ─────────────────────────────────────────────────────────
+
+    function populateMonthDropdown(months) {
+      const sel = document.getElementById('month-select');
+      if (!sel) return;
+      const current = ACTIVE_MONTH;
+      const opts = ['<option value="">All Time</option>'];
+      months.forEach(m => {
+        const [y, mo] = m.month.split('-');
+        const label = new Date(parseInt(y), parseInt(mo) - 1, 1)
+          .toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        opts.push(`<option value="${m.month}">${label} · ${m.videos}v · ${m.comments}c</option>`);
+      });
+      sel.innerHTML = opts.join('');
+      sel.value = current;
+    }
+
+    function populateBrandDropdown() {
+      const sel = document.getElementById('brand-select');
+      if (!sel) return;
+      const brands = APP_DATA && APP_DATA.brands ? APP_DATA.brands : (APP_DATA && APP_DATA.by_brand ? Object.keys(APP_DATA.by_brand).sort() : []);
+      const current = ACTIVE_BRAND_FILTER;
+      const opts = ['<option value="">All Brands</option>'];
+      brands.forEach(b => {
+        const count = (APP_DATA.by_brand && APP_DATA.by_brand[b]) || 0;
+        opts.push(`<option value="${b}">${b} · ${count}c</option>`);
+      });
+      sel.innerHTML = opts.join('');
+      sel.value = current;
+    }
+
+    function onMonthChange(val) {
+      ACTIVE_MONTH = val || '';
+      reRenderActivePage();
+    }
+
+    function onBrandChange(val) {
+      ACTIVE_BRAND_FILTER = val || '';
+      reRenderActivePage();
+    }
+
+    function updateCommentChipCounts() {
+      if (!ALL_COMMENTS) return;
+      let base = ALL_COMMENTS;
+      if (ACTIVE_BRAND_FILTER) base = base.filter(c => c.brand === ACTIVE_BRAND_FILTER);
+      if (ACTIVE_MONTH) base = base.filter(c => (c.published_at || '').startsWith(ACTIVE_MONTH));
+      const catLabels = { all: 'All Comments', question: '❓ Questions', complaint: '😠 Complaints', compliment: '💚 Compliments', crisis: '🚨 Crisis', spam: '🚫 Spam' };
+      document.querySelectorAll('.filter-chip[data-cat]').forEach(chip => {
+        const cat = chip.dataset.cat;
+        const count = cat === 'all' ? base.length : base.filter(c => c.category === cat).length;
+        chip.textContent = `${catLabels[cat] || cat} (${count})`;
+      });
+    }
+
+    function reRenderActivePage() {
+      const active = document.querySelector('.page.active');
+      if (!active) return;
+      const id = active.id.replace('page-', '');
+      if (id === 'videos')    renderVideosPage();
+      if (id === 'comments')  { updateCommentChipCounts(); renderComments(ALL_COMMENTS, ACTIVE_FILTER); }
+      if (id === 'overview')  { renderHeroStats(); renderAllCharts(); }
+      if (id === 'crisis')    renderCrisis();
+      updateCommentChipCounts();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // INSIGHTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function renderInsights() {
+      const insights = APP_DATA.insights || {};
+      const container = document.getElementById('insights-container');
+
+      if (!Object.keys(insights).length) {
+        container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">◈</div>
+        <h3>No Insights Generated</h3>
+        <p>Click <strong>Execute Agent</strong> to generate AI-powered performance narratives.</p>
+      </div>`;
+        return;
+      }
+
+      container.innerHTML = Object.entries(insights).map(([channel, text]) => `
+    <div class="insight-block">
+      <div class="insight-channel-name">◈ ${channel}</div>
+      <div class="insight-text">${escapeHtml(text)}</div>
+    </div>
+  `).join('');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // CRISIS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    let CRISIS_REVIEWS = {};   // {comment_id: [{reviewer, reviewed_at}]}
+    let CRISIS_REVIEWERS = { base: [], by_brand: {} };  // {base: [...], by_brand: {brand: manager_email}}
+
+    async function sendCrisisTestEmail(btn) {
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      try {
+        const r = await fetch('/api/crisis/test-email', { method: 'POST' });
+        const j = await r.json();
+        if (j.sent) {
+          alert('Test email sent to: ' + (j.recipients || []).join(', '));
+        } else if (j.reason === 'SMTP not configured') {
+          alert('Not sent — CRISIS_SMTP_HOST / CRISIS_SMTP_USER / CRISIS_SMTP_PASSWORD aren\'t set in .env yet.');
+        } else {
+          alert('Send failed: ' + (j.error || j.reason || 'Unknown error') + '\n\nCheck the server log for details.');
+        }
+      } catch (e) {
+        alert('Network error: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+
+    async function loadCrisisReviews() {
+      try {
+        const [reviewsRes, reviewersRes] = await Promise.all([
+          fetch('/api/crisis/reviews'),
+          fetch('/api/crisis/reviewers'),
+        ]);
+        const reviewsJson   = await reviewsRes.json();
+        const reviewersJson = await reviewersRes.json();
+        if (reviewsJson.ok) CRISIS_REVIEWS = reviewsJson.data || {};
+        if (reviewersJson.ok) CRISIS_REVIEWERS = reviewersJson.data || { base: [], by_brand: {} };
+        renderCrisis();
+      } catch (e) {
+        console.error('Crisis reviews load error:', e);
+      }
+    }
+
+    function reviewersForBrand(brand) {
+      const base = CRISIS_REVIEWERS.base || [];
+      const mgr  = (CRISIS_REVIEWERS.by_brand || {})[brand];
+      if (mgr && !base.some(r => r.toLowerCase() === mgr.toLowerCase())) {
+        return [...base, mgr];
+      }
+      return base;
+    }
+
+    function renderCrisisReviewBlock(c) {
+      if (!c.comment_id) return '';
+      const acked = (CRISIS_REVIEWS[c.comment_id] || []).map(r => r.reviewer.toLowerCase());
+      const chips = reviewersForBrand(c.brand).map(reviewer => {
+        const isAcked = acked.includes(reviewer.toLowerCase());
+        return `<button
+          onclick="toggleCrisisReview('${c.comment_id}', '${escapeHtml(reviewer).replace(/'/g, "\\'")}', ${isAcked})"
+          style="font-size:11px;padding:4px 10px;margin:3px 6px 0 0;border-radius:12px;cursor:pointer;
+                 border:1px solid ${isAcked ? 'var(--neon-green)' : 'var(--border)'};
+                 background:${isAcked ? 'rgba(57,255,20,0.12)' : 'transparent'};
+                 color:${isAcked ? 'var(--neon-green)' : 'var(--text-dim)'}">
+          ${isAcked ? '✓' : '○'} ${escapeHtml(reviewer)}
+        </button>`;
+      }).join('');
+      return `<div style="margin-top:10px">
+        <div style="font-size:10px;color:var(--text-dimmer);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">Reviewed by</div>
+        <div style="display:flex;flex-wrap:wrap">${chips}</div>
+      </div>`;
+    }
+
+    async function toggleCrisisReview(commentId, reviewer, currentlyAcked) {
+      try {
+        if (currentlyAcked) {
+          await fetch('/api/crisis/reviews', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comment_id: commentId, reviewer }),
+          });
+        } else {
+          await fetch('/api/crisis/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comment_id: commentId, reviewer }),
+          });
+        }
+        await loadCrisisReviews();
+      } catch (e) {
+        alert('Could not update review status: ' + e.message);
+      }
+    }
+
+    function renderCrisis() {
+      let crises = APP_DATA.crisis_alerts || [];
+      if (ACTIVE_MONTH) {
+        crises = crises.filter(c => (c.published_at || '').startsWith(ACTIVE_MONTH));
+      }
+      if (ACTIVE_BRAND_FILTER) {
+        crises = crises.filter(c => c.brand === ACTIVE_BRAND_FILTER);
+      }
+      const container = document.getElementById('crisis-container');
+
+      const filterDesc = [
+        ACTIVE_MONTH ? ACTIVE_MONTH : null,
+        ACTIVE_BRAND_FILTER ? ACTIVE_BRAND_FILTER : null,
+      ].filter(Boolean).join(' · ');
+
+      if (!crises.length) {
+        container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <h3>No Crisis Alerts${filterDesc ? ' for ' + filterDesc : ''}</h3>
+        <p>${filterDesc ? 'Clear filters to see all historical alerts.' : 'System monitoring active — all comments cleared'}</p>
+      </div>`;
+        return;
+      }
+
+      container.innerHTML = crises.map(c => {
+        const date = c.published_at ? new Date(c.published_at).toLocaleDateString() : '—';
+        return `
+      <div class="comment-card crisis">
+        <div class="comment-tag-col">
+          <div class="comment-emoji">🚨</div>
+          <div class="comment-category-tag crisis">CRISIS</div>
+        </div>
+
+        <div class="comment-content">
+          <div class="comment-author">@${escapeHtml(c.author || 'unknown')} on "${escapeHtml(truncate(c.video_title || '', 40))}"</div>
+          <div class="comment-text">${escapeHtml(c.text || '')}</div>
+          ${c.crisis_reason ? `<div style="font-size:11px;color:var(--hot-pink);margin-top:8px;">⚠ Reason: ${escapeHtml(c.crisis_reason)}</div>` : ''}
+          <div style="background:rgba(255,0,110,0.08);border:1px solid rgba(255,0,110,0.2);border-radius:8px;padding:12px;margin-top:12px;font-size:12px;color:var(--warning)">
+            DO NOT AUTO-REPLY — Escalate to brand manager immediately
+          </div>
+          ${renderCrisisReviewBlock(c)}
+        </div>
+
+        <div class="comment-meta-col">
+          <div class="comment-date">${date}</div>
+          <div class="comment-brand-pill">${c.brand || '—'}</div>
+        </div>
+      </div>
+    `;
+      }).join('');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // MODEL PERFORMANCE
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function renderModelPage() {
+      if (!APP_DATA) return;
+
+      const total = ALL_COMMENTS.length;
+      const classified = ALL_COMMENTS.filter(c => c.category && c.category !== 'error').length;
+      const highConf = ALL_COMMENTS.filter(c => (c.classification_confidence || 0) >= 0.8).length;
+      const medConf = ALL_COMMENTS.filter(c => (c.classification_confidence || 0) >= 0.5 && (c.classification_confidence || 0) < 0.8).length;
+      const lowConf = ALL_COMMENTS.filter(c => (c.classification_confidence || 0) < 0.5 && c.category).length;
+      const crises = ALL_COMMENTS.filter(c => c.crisis_flag).length;
+      const withReply = ALL_COMMENTS.filter(c => c.suggested_reply).length;
+
+      // Confidence distribution
+      destroyChart('confidence');
+      const confCtx = document.getElementById('chartConfidence');
+      if (confCtx) {
+        CHARTS.confidence = new Chart(confCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['High (≥80%)', 'Medium (50-79%)', 'Low (<50%)'],
+            datasets: [{
+              data: [highConf, medConf, lowConf],
+              backgroundColor: ['#39ff14', '#ffb800', '#ff006e'],
+              borderColor: '#0d0f12',
+              borderWidth: 4
+            }]
+          },
+          options: { ...CHART_DEFAULTS, cutout: '70%' }
+        });
+      }
+
+      // Category pie
+      destroyChart('categoryPie');
+      const cats = APP_DATA.by_category || {};
+      const catPieCtx = document.getElementById('chartCategoryPie');
+      if (catPieCtx && Object.keys(cats).length) {
+        const CAT_COLORS = { question: '#00d4ff', complaint: '#ffb800', compliment: '#39ff14', spam: '#5a6b7d', crisis: '#ff006e', irrelevant: '#2d3544' };
+        CHARTS.categoryPie = new Chart(catPieCtx, {
+          type: 'pie',
+          data: {
+            labels: Object.keys(cats).map(l => l.toUpperCase()),
+            datasets: [{
+              data: Object.values(cats),
+              backgroundColor: Object.keys(cats).map(l => CAT_COLORS[l] || '#363c4f'),
+              borderColor: '#0d0f12',
+              borderWidth: 3
+            }]
+          },
+          options: { ...CHART_DEFAULTS }
+        });
+      }
+
+      // Processing stats
+      destroyChart('processing');
+      const procCtx = document.getElementById('chartProcessing');
+      if (procCtx) {
+        CHARTS.processing = new Chart(procCtx, {
+          type: 'bar',
+          data: {
+            labels: ['Classified', 'High Conf', 'With Reply', 'Crises'],
+            datasets: [{
+              data: [classified, highConf, withReply, crises],
+              backgroundColor: ['#00fff5', '#39ff14', '#ffb800', '#ff006e'],
+              borderRadius: 6
+            }]
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#8895a7' }, grid: { color: '#252b38' } },
+              y: { ticks: { color: '#8895a7' }, grid: { color: '#252b38' } }
+            }
+          }
+        });
+      }
+
+      // Metrics table
+      const accuracy = total > 0 ? Math.round(classified / total * 100) : 0;
+      const replyRate = classified > 0 ? Math.round(withReply / classified * 100) : 0;
+      const avgConf = total > 0 ? Math.round(ALL_COMMENTS.reduce((s, c) => s + (c.classification_confidence || 0), 0) / total * 100) : 0;
+
+      document.getElementById('model-metrics-container').innerHTML = `
+    <div class="metric-table">
+      <div class="metric-row">
+        <div class="metric-name">Model</div>
+        <div class="metric-val">Gemini 2.5 Flash</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-name">Total Processed</div>
+        <div class="metric-val">${formatNumber(total)}</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-name">Classification Rate</div>
+        <div class="metric-val ${accuracy >= 90 ? 'green' : 'warn'}">${accuracy}%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-name">Avg Confidence</div>
+        <div class="metric-val ${avgConf >= 70 ? 'green' : 'warn'}">${avgConf}%</div>
+      </div>
+    </div>
+    <div class="metric-table">
+      <div class="metric-row">
+        <div class="metric-name">High Confidence (≥80%)</div>
+        <div class="metric-val green">${formatNumber(highConf)}</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-name">Crisis Flags</div>
+        <div class="metric-val ${crises > 0 ? 'red' : 'green'}">${crises}</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-name">Replies Generated</div>
+        <div class="metric-val">${formatNumber(withReply)}</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-name">Reply Rate</div>
+        <div class="metric-val ${replyRate >= 60 ? 'green' : 'warn'}">${replyRate}%</div>
+      </div>
+    </div>
+  `;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // UTILITIES
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function formatNumber(n) {
+      if (n === null || n === undefined) return '—';
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+      return String(n);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function truncate(str, len) {
+      return str.length > len ? str.substring(0, len) + '…' : str;
+    }
+
+    async function triggerAgentRun() {
+      const btn = document.getElementById('run-agent-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Starting...';
+
+      try {
+        const res = await fetch('/api/trigger-run', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          btn.textContent = '⚙ Running...';
+          btn.style.background = 'linear-gradient(135deg, #ffb800 0%, #ff8800 100%)';
+          pollAgentStatus();
+        } else {
+          alert('Could not start agent: ' + (data.error || 'Unknown error'));
+          btn.disabled = false;
+          btn.textContent = '▶ Execute Agent';
+          btn.style.background = '';
+        }
+      } catch (err) {
+        alert('Network error: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = '▶ Execute Agent';
+        btn.style.background = '';
+      }
+    }
+
+    function pollAgentStatus() {
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch('/api/agent-status');
+          const data = await res.json();
+          if (!data.running) {
+            clearInterval(interval);
+            const btn = document.getElementById('run-agent-btn');
+            btn.disabled = false;
+            btn.textContent = '▶ Execute Agent';
+            btn.style.background = '';
+            await loadAllData();
+          } else {
+            // Intermediary updates while the agent is actively executing
+            await loadAllData();
+          }
+        } catch (e) { clearInterval(interval); }
+      }, 3000);
+    }
+
+    async function pollHealth() {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        const dot = document.querySelector('.pulse-dot');
+        const label = document.querySelector('.agent-status');
+        if (data.ok) {
+          dot.style.background = data.crisis_pending > 0 ? 'var(--hot-pink)' : 'var(--neon-green)';
+          dot.style.boxShadow = data.crisis_pending > 0 ? '0 0 8px var(--hot-pink)' : '0 0 8px var(--neon-green)';
+        }
+      } catch (e) { }
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('live-clock').textContent = now.toLocaleTimeString();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // CONTENT BRIEFS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function renderBriefs() {
+      if (!APP_DATA) return;
+      const briefs = APP_DATA.briefs || {};
+      const container = document.getElementById('briefs-container');
+      if (!container) return;
+
+      if (!Object.keys(briefs).length) {
+        container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">✦</div>
+        <h3>No Content Briefs Yet</h3>
+        <p>Click <strong>Execute Agent</strong> to generate AI content strategy briefs from your audience questions.</p>
+      </div>`;
+        return;
+      }
+
+      container.innerHTML = Object.entries(briefs).map(([channel, text]) => `
+    <div class="insight-block" style="border-color:rgba(181,55,255,0.2)">
+      <div class="insight-channel-name" style="color:var(--plasma)">✦ ${channel} — Content Strategy</div>
+      <div class="insight-text">${escapeHtml(text)}</div>
+    </div>
+  `).join('');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // COMPETITOR ANALYSIS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    let BRAND_COMPETITORS = {};   // {brand: [competitors]}
+    let ACTIVE_BRAND      = '';   // currently selected Tolaram brand tab
+
+    async function loadCompetitorList() {
+      try {
+        const r = await fetch('/api/competitors');
+        const j = await r.json();
+        if (!j.ok) return;
+        BRAND_COMPETITORS = j.data || {};
+
+        const brands = Object.keys(BRAND_COMPETITORS);
+        if (!ACTIVE_BRAND || !brands.includes(ACTIVE_BRAND)) {
+          ACTIVE_BRAND = brands[0] || '';
+        }
+
+        renderBrandTabs();
+        renderCompetitorPills();
+      } catch (e) {
+        console.error('Competitor list error:', e);
+      }
+    }
+
+    function renderBrandTabs() {
+      const brands = Object.keys(BRAND_COMPETITORS);
+      const tabs = document.getElementById('brand-tabs');
+      if (!tabs) return;
+      tabs.innerHTML = brands.map(b => {
+        const count = (BRAND_COMPETITORS[b] || []).length;
+        return `
+          <div class="brand-tab ${b === ACTIVE_BRAND ? 'active' : ''}"
+               onclick="setActiveBrand('${escapeHtml(b).replace(/'/g, "\\'")}')">
+            <span>${escapeHtml(b)}</span>
+            <span class="bt-count">${count}</span>
+          </div>`;
+      }).join('');
+      const lbl = document.getElementById('brand-tab-current');
+      if (lbl) lbl.textContent = ACTIVE_BRAND || '—';
+    }
+
+    function setActiveBrand(brand) {
+      ACTIVE_BRAND = brand;
+      renderBrandTabs();
+      renderCompetitorPills();
+      // Re-render any cached analysis for the new brand
+      if (COMPETITOR_DATA) renderCompetitorAnalysis();
+    }
+
+    function renderCompetitorPills() {
+      const container = document.getElementById('comp-pills');
+      const countEl   = document.getElementById('comp-count');
+      const comps = (BRAND_COMPETITORS[ACTIVE_BRAND] || []);
+
+      if (countEl) countEl.textContent = `${comps.length} competitors`;
+
+      if (!comps.length) {
+        container.innerHTML = '<div style="color:var(--text-dimmer);font-size:12px;font-style:italic;">No competitors paired to this brand yet — add one above.</div>';
+        return;
+      }
+
+      container.innerHTML = comps.map(c => {
+        const ref = (c.reference || '').replace(/'/g, "\\'");
+        const tip = c.rationale ? ` title="${escapeHtml(c.rationale)}"` : '';
+        return `
+          <div class="competitor-pill"${tip}>
+            <span class="cp-label">${escapeHtml(c.label || c.reference)}</span>
+            <span class="cp-priority ${c.priority || 'secondary'}">${c.priority || 'secondary'}</span>
+            <button class="btn-danger" onclick="removeCompetitor('${ref}')">× Remove</button>
+          </div>`;
+      }).join('');
+    }
+
+    async function addCompetitor() {
+      if (!ACTIVE_BRAND) {
+        alert('Pick a Tolaram brand tab first.');
+        return;
+      }
+      const ref = document.getElementById('comp-ref-input').value.trim();
+      if (!ref) {
+        alert('Enter a channel @handle, UC-id, or name.');
+        return;
+      }
+      const body = {
+        brand:     ACTIVE_BRAND,
+        reference: ref,
+        label:     document.getElementById('comp-label-input').value.trim(),
+        priority:  document.getElementById('comp-priority-input').value,
+        rationale: document.getElementById('comp-rationale-input').value.trim(),
+      };
+      try {
+        const r = await fetch('/api/competitors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          ['comp-ref-input', 'comp-label-input', 'comp-rationale-input'].forEach(id => {
+            document.getElementById(id).value = '';
+          });
+          loadCompetitorList();
+        } else {
+          alert(j.error || 'Could not add competitor');
+        }
+      } catch (e) {
+        alert('Network error: ' + e.message);
+      }
+    }
+
+    async function pinCompetitorChannelFromInput(brand, ref) {
+      const el = document.getElementById(`pin-input-${ref}`);
+      if (!el) return;
+      let val = el.value.trim();
+      // Accept a full channel URL, pull the UC-id out of it.
+      const urlMatch = val.match(/UC[a-zA-Z0-9_-]{20,}/);
+      if (urlMatch) val = urlMatch[0];
+      if (!val.startsWith('UC') || val.length < 20) {
+        alert('Enter a valid channel ID (starts with "UC…") or paste the channel URL.');
+        return;
+      }
+      await pinCompetitorChannel(brand, ref, val);
+    }
+
+    async function pinCompetitorChannel(brand, ref, channelId) {
+      try {
+        const r = await fetch('/api/competitors/pin-channel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brand, reference: ref, channel_id: channelId }),
+        });
+        const j = await r.json();
+        if (!j.ok) {
+          alert(j.error || 'Could not pin channel');
+          return;
+        }
+        // Re-scan just this brand so the card reflects the corrected channel immediately.
+        await runCompetitorScan(false);
+      } catch (e) {
+        alert('Network error: ' + e.message);
+      }
+    }
+
+    async function removeCompetitor(ref) {
+      if (!confirm(`Remove "${ref}" from ${ACTIVE_BRAND}'s competitor set?`)) return;
+      try {
+        await fetch(`/api/competitors?brand=${encodeURIComponent(ACTIVE_BRAND)}&reference=${encodeURIComponent(ref)}`,
+          { method: 'DELETE' });
+        loadCompetitorList();
+      } catch (e) {
+        alert('Network error: ' + e.message);
+      }
+    }
+
+    async function runCompetitorScan(allBrands = false) {
+      const btn = document.getElementById(allBrands ? 'comp-scan-all-btn' : 'comp-scan-btn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ Scanning…';
+
+      try {
+        const body = { max_videos_per_channel: 15, include_ai: true };
+        if (!allBrands) body.brand = ACTIVE_BRAND;
+
+        const r = await fetch('/api/competitors/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          COMPETITOR_DATA = j.data;
+          renderCompetitorAnalysis();
+        } else {
+          alert('Scan failed: ' + (j.error || 'unknown'));
+        }
+      } catch (e) {
+        alert('Scan failed: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    async function loadCompetitorAnalysis() {
+      try {
+        const r = await fetch('/api/competitors/analysis');
+        const j = await r.json();
+        if (j.ok && j.data && j.data.brands && Object.keys(j.data.brands).length) {
+          COMPETITOR_DATA = j.data;
+          renderCompetitorAnalysis();
+        }
+      } catch (e) {
+        console.error('Load analysis error:', e);
+      }
+    }
+
+    function renderCompetitorAnalysis() {
+      const container = document.getElementById('comp-analysis-container');
+      const allBrands = (COMPETITOR_DATA && COMPETITOR_DATA.brands) || {};
+      const brandResults = allBrands[ACTIVE_BRAND] || [];
+
+      if (COMPETITOR_DATA && COMPETITOR_DATA.generated_at) {
+        document.getElementById('comp-last-scan').textContent =
+          'Last scan: ' + new Date(COMPETITOR_DATA.generated_at).toLocaleString();
+      }
+
+      if (!brandResults.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚔</div>
+            <h3>No scan results for ${escapeHtml(ACTIVE_BRAND || 'this brand')}</h3>
+            <p>Click <strong>Scan This Brand</strong> to run the analysis.</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = brandResults.map(c => renderCompetitorCard(c)).join('');
+
+      // Once cards rendered, lazy-load notes + moves for each competitor
+      brandResults.forEach(c => {
+        if (c.reference) {
+          loadNotesFor(c.reference);
+          loadMovesFor(c.reference);
+        }
+      });
+    }
+
+    function renderCompetitorCard(c) {
+      if (c.error) {
+        const safeRef   = (c.reference || '').replace(/'/g, "\\'");
+        const safeBrand = (c.tolaram_brand || ACTIVE_BRAND || '').replace(/'/g, "\\'");
+        const candidates = c.candidates || [];
+        const candidateRows = candidates.length ? `
+          <div style="margin-top:10px;font-size:11px">
+            <div style="color:var(--text-dim);margin-bottom:4px">Closest YouTube search hits (none confident enough to auto-use):</div>
+            ${candidates.map(cand => `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px dashed var(--border)">
+                <span>${escapeHtml(cand.title)} <span style="color:var(--text-dimmer)">(match ${Math.round((cand.score||0)*100)}%)</span></span>
+                <button class="btn-secondary" style="font-size:10px;padding:3px 8px"
+                  onclick="pinCompetitorChannel('${safeBrand}','${safeRef}','${cand.channel_id}')">Use this</button>
+              </div>`).join('')}
+          </div>` : '';
+        return `
+          <div class="competitor-card">
+            <div class="competitor-card-head">
+              <div style="flex:1">
+                <div class="competitor-name">${escapeHtml(c.label || c.reference)}</div>
+                <div class="competitor-sub" style="color:var(--hot-pink)">⚠ ${escapeHtml(c.error || 'Could not resolve channel')}</div>
+                ${candidateRows}
+                <div style="margin-top:10px;display:flex;gap:6px">
+                  <input id="pin-input-${safeRef}" type="text" placeholder="Paste correct channel ID (UC…) or URL"
+                    style="flex:1;font-size:11px;padding:6px 8px;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+                  <button class="btn-secondary" style="font-size:11px"
+                    onclick="pinCompetitorChannelFromInput('${safeBrand}','${safeRef}')">Confirm channel</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      const ch  = c.channel || {};
+      const m   = c.metrics || {};
+      const ai  = c.ai_brief || {};
+      const camps   = c.campaigns || [];
+      const videos  = c.videos || [];
+      const safeRef = (c.reference || '').replace(/'/g, "\\'");
+
+      const top5videos = videos
+        .slice()
+        .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+        .slice(0, 5);
+
+      const videoRows = top5videos.map(v => `
+        <div class="competitor-video-row">
+          <img src="${v.thumbnail || ''}" alt="" onerror="this.style.visibility='hidden'">
+          <div>
+            <div class="cv-title"><a href="${v.video_url || '#'}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${escapeHtml(v.title || '')}</a></div>
+            <div class="cv-meta">${v.published_at ? new Date(v.published_at).toLocaleDateString() : '—'} · ${formatNumber(v.like_count || 0)} likes · ${formatNumber(v.comment_count || 0)} comments</div>
+          </div>
+          <div class="cv-reach">
+            <div class="cv-reach-val">${formatNumber(v.view_count || 0)}</div>
+            <div class="cv-reach-lbl">Reach</div>
+          </div>
+        </div>`).join('');
+
+      const campaignsBlock = camps.length ? `
+        <div class="comp-section-box" style="grid-column:1/-1">
+          <div class="comp-section-title">Detected Campaigns</div>
+          ${camps.map(cp => `
+            <div style="padding:10px 0;border-bottom:1px dashed var(--border);font-size:12px">
+              <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+                <div>
+                  <span style="color:var(--electric);font-weight:700;font-family:var(--font-mono)">${escapeHtml(cp.signature)}</span>
+                  <span style="color:var(--text-dim);font-size:10px;margin-left:8px;text-transform:uppercase">${cp.type}</span>
+                </div>
+                <div style="font-family:var(--font-mono);color:var(--text-dim);font-size:11px;text-align:right">
+                  ${cp.video_count} videos · ${formatNumber(cp.total_reach)} reach<br>
+                  <span style="font-size:10px">${(cp.first_seen||'').slice(0,10)} → ${(cp.last_seen||'').slice(0,10)}</span>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>` : '';
+
+      const aiBlock = renderAIBrief(ai, c.reference, c.tolaram_brand);
+
+      return `
+        <div class="competitor-card" data-ref="${escapeHtml(c.reference)}">
+          <div class="competitor-card-head">
+            ${ch.thumbnail ? `<img class="competitor-avatar" src="${ch.thumbnail}" onerror="this.style.display='none'">` : ''}
+            <div style="flex:1">
+              <div class="competitor-name">
+                ${escapeHtml(ch.title || c.label || c.reference)}
+                <span class="cp-priority ${c.priority || 'secondary'}" style="margin-left:10px;font-size:9px">${c.priority || 'secondary'}</span>
+                ${c.resolution_confidence === 'verified_search' ? `
+                  <span title="Auto-matched by name similarity, not manually confirmed — double-check this is the right channel"
+                    style="margin-left:8px;font-size:9px;color:var(--text-dim);border:1px solid var(--border);border-radius:3px;padding:1px 6px;cursor:help">⚠ unconfirmed match</span>` : ''}
+              </div>
+              <div class="competitor-sub">
+                ${formatNumber(ch.subscriber_count || 0)} subscribers ·
+                ${formatNumber(ch.video_count || 0)} videos ·
+                ${formatNumber(ch.view_count || 0)} total channel views
+              </div>
+              ${c.rationale ? `<div style="margin-top:6px;font-size:11px;color:var(--text-dim);font-style:italic">${escapeHtml(c.rationale)}</div>` : ''}
+            </div>
+          </div>
+
+          <div class="competitor-metrics">
+            <div class="comp-metric">
+              <div class="comp-metric-label">Scanned Videos</div>
+              <div class="comp-metric-value">${c.video_count || 0}</div>
+            </div>
+            <div class="comp-metric">
+              <div class="comp-metric-label">Window Reach</div>
+              <div class="comp-metric-value">${formatNumber(m.window_reach || 0)}</div>
+            </div>
+            <div class="comp-metric">
+              <div class="comp-metric-label">Avg / Video</div>
+              <div class="comp-metric-value">${formatNumber(m.window_avg_views || 0)}</div>
+            </div>
+            <div class="comp-metric">
+              <div class="comp-metric-label">Likes</div>
+              <div class="comp-metric-value">${formatNumber(m.window_likes || 0)}</div>
+            </div>
+          </div>
+
+          ${aiBlock}
+
+          <div class="competitor-sections" style="margin-top:14px">
+            ${campaignsBlock}
+          </div>
+
+          <div class="competitor-videos-list">
+            <div class="comp-section-title" style="margin-bottom:8px">Top 5 Videos (by reach)</div>
+            ${videoRows || '<div style="color:var(--text-dimmer);font-size:11px">No videos scanned.</div>'}
+          </div>
+
+          ${renderNotesBox(c.reference, c.tolaram_brand)}
+          ${renderSavedMovesBox(c.reference, c.tolaram_brand)}
+        </div>`;
+    }
+
+    function renderAIBrief(ai, ref, brand) {
+      if (!ai || ai.ai_skipped) {
+        return `<div class="inline-alert" style="margin-top:14px">⚠ AI strategic brief skipped — set GEMINI_API_KEY in .env to enable.</div>`;
+      }
+      if (ai.ai_error) {
+        return `<div class="inline-alert" style="margin-top:14px">⚠ AI brief failed: ${escapeHtml(ai.ai_error)}</div>`;
+      }
+      if (ai.parse_error || ai.ai_raw) {
+        return `<div class="ai-brief"><div class="ai-brief-header"><div class="ai-brief-icon">AI</div><div class="ai-brief-title">Strategic Brief (raw)</div></div><pre style="white-space:pre-wrap;font-size:12px;color:var(--text-dim);font-family:var(--font-mono)">${escapeHtml(ai.ai_raw || '')}</pre></div>`;
+      }
+
+      const safeRef   = (ref || '').replace(/'/g, "\\'");
+      const safeBrand = (brand || '').replace(/'/g, "\\'");
+
+      const what     = ai.what_theyre_doing || '';
+      const working  = Array.isArray(ai.whats_working) ? ai.whats_working : [];
+      const lag      = Array.isArray(ai.where_we_lag) ? ai.where_we_lag : [];
+      const moves    = Array.isArray(ai.counter_moves) ? ai.counter_moves : [];
+      const lever    = ai.leverage_play || '';
+
+      const movesHtml = moves.map((m, i) => {
+        const moveText = typeof m === 'string' ? m : (m.move || '');
+        const rat      = typeof m === 'object' ? (m.rationale || '') : '';
+        const urg      = (typeof m === 'object' ? m.urgency : 'medium') || 'medium';
+        const moveEsc  = moveText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const ratEsc   = rat.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        return `
+          <div class="move-card urgency-${urg}">
+            <div class="move-text">${escapeHtml(moveText)}</div>
+            ${rat ? `<div class="move-rationale">${escapeHtml(rat)}</div>` : ''}
+            <div class="move-meta">
+              <span class="urgency-pill ${urg}">${urg}</span>
+              <button class="btn-ghost" style="padding:4px 10px;font-size:10px"
+                onclick="saveAIMoveAsCounterMove('${safeRef}','${safeBrand}','${moveEsc}','${ratEsc}','${urg}')">
+                + Save as Counter-Move
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="ai-brief">
+          <div class="ai-brief-header">
+            <div class="ai-brief-icon">AI</div>
+            <div class="ai-brief-title">AI Strategic Brief</div>
+            ${ai._repaired_from_truncation ? '<span title="The model\'s response was cut short; this brief was trimmed to only the parts that came through complete." style="margin-left:8px;font-size:9px;color:var(--text-dim);border:1px solid var(--border);border-radius:3px;padding:1px 6px;cursor:help">shortened</span>' : ''}
+          </div>
+
+          ${what ? `
+            <div class="ai-brief-section">
+              <div class="ai-section-label">What They're Doing</div>
+              <div class="ai-prose">${escapeHtml(what)}</div>
+            </div>` : ''}
+
+          ${working.length ? `
+            <div class="ai-brief-section">
+              <div class="ai-section-label">What's Working</div>
+              <ul class="ai-bullets">${working.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>
+            </div>` : ''}
+
+          ${lag.length ? `
+            <div class="ai-brief-section">
+              <div class="ai-section-label lag">Where ${escapeHtml(brand || 'We')} Lags</div>
+              <ul class="ai-bullets lag">${lag.map(l => `<li>${escapeHtml(l)}</li>`).join('')}</ul>
+            </div>` : ''}
+
+          ${moves.length ? `
+            <div class="ai-brief-section">
+              <div class="ai-section-label move">Recommended Counter-Moves</div>
+              ${movesHtml}
+            </div>` : ''}
+
+          ${lever ? `
+            <div class="ai-brief-section">
+              <div class="ai-section-label lever">⚡ Leverage Play</div>
+              <div class="ai-prose" style="font-weight:600;color:var(--warning)">${escapeHtml(lever)}</div>
+            </div>` : ''}
+        </div>`;
+    }
+
+    function saveAIMoveAsCounterMove(ref, brand, move, rationale, urgency) {
+      // Pre-fill the move form, then submit it
+      addCounterMove(ref, brand, move, rationale, urgency);
+    }
+
+    // ── Notes ─────────────────────────────────────────────────────────────────
+
+    async function loadNotesFor(ref) {
+      try {
+        const r = await fetch('/api/competitors/notes?reference=' + encodeURIComponent(ref));
+        const j = await r.json();
+        if (!j.ok) return;
+        renderNotesFor(ref, j.data || []);
+      } catch (e) { /* silent */ }
+    }
+
+    function renderNotesBox(ref, brand) {
+      const safeRef   = (ref || '').replace(/'/g, "\\'");
+      const safeBrand = (brand || '').replace(/'/g, "\\'");
+      return `
+        <div class="notes-box">
+          <div class="notes-box-title">
+            <span>📝 Notes</span>
+            <span style="font-weight:400;color:var(--text-dimmer);font-size:10px;text-transform:none;letter-spacing:0">Your observations, persistent</span>
+          </div>
+          <div id="notes-list-${escapeHtml(ref)}" style="font-size:12px">
+            <span style="color:var(--text-dimmer);font-style:italic;font-size:11px">Loading…</span>
+          </div>
+          <div class="note-add-row">
+            <textarea id="note-input-${escapeHtml(ref)}" placeholder="Add a note about this competitor (campaigns you spotted, things to watch, what they're doing well...)"></textarea>
+            <button class="btn-primary" style="align-self:start" onclick="addNoteFor('${safeRef}','${safeBrand}')">+ Save Note</button>
+          </div>
+        </div>`;
+    }
+
+    function renderNotesFor(ref, notes) {
+      const el = document.getElementById('notes-list-' + ref);
+      if (!el) return;
+      if (!notes.length) {
+        el.innerHTML = '<span style="color:var(--text-dimmer);font-style:italic;font-size:11px">No notes yet.</span>';
+        return;
+      }
+      el.innerHTML = notes.map(n => `
+        <div class="note-item">
+          <div>${escapeHtml(n.body)}</div>
+          <div class="note-meta">
+            ${escapeHtml(n.author || 'User')} · ${new Date(n.created_at).toLocaleString()}
+            <button class="btn-danger" style="margin-left:10px;padding:2px 8px;font-size:9px" onclick="deleteNote('${n.id}','${ref.replace(/'/g, "\\'")}')">× Delete</button>
+          </div>
+        </div>`).join('');
+    }
+
+    async function addNoteFor(ref, brand) {
+      const ta = document.getElementById('note-input-' + ref);
+      const body = (ta.value || '').trim();
+      if (!body) return;
+      try {
+        const r = await fetch('/api/competitors/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference: ref, brand: brand, body: body }),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          ta.value = '';
+          loadNotesFor(ref);
+        } else {
+          alert(j.error || 'Could not save note');
+        }
+      } catch (e) { alert('Network error: ' + e.message); }
+    }
+
+    async function deleteNote(noteId, ref) {
+      if (!confirm('Delete this note?')) return;
+      await fetch('/api/competitors/notes/' + encodeURIComponent(noteId), { method: 'DELETE' });
+      loadNotesFor(ref);
+    }
+
+    // ── Counter-Moves ─────────────────────────────────────────────────────────
+
+    async function loadMovesFor(ref) {
+      try {
+        const r = await fetch('/api/competitors/moves?reference=' + encodeURIComponent(ref));
+        const j = await r.json();
+        if (!j.ok) return;
+        renderMovesFor(ref, j.data || []);
+      } catch (e) { /* silent */ }
+    }
+
+    function renderSavedMovesBox(ref, brand) {
+      const safeRef   = (ref || '').replace(/'/g, "\\'");
+      const safeBrand = (brand || '').replace(/'/g, "\\'");
+      return `
+        <div class="saved-moves-box">
+          <div class="notes-box-title">
+            <span>🎯 Counter-Moves Log</span>
+            <span style="font-weight:400;color:var(--text-dimmer);font-size:10px;text-transform:none;letter-spacing:0">Track planned responses</span>
+          </div>
+          <div id="moves-list-${escapeHtml(ref)}" style="font-size:12px">
+            <span style="color:var(--text-dimmer);font-style:italic;font-size:11px">Loading…</span>
+          </div>
+          <div class="move-add-row">
+            <textarea id="move-input-${escapeHtml(ref)}" placeholder="Add a counter-move (e.g. 'Launch our Shorts cookoff series next month')"></textarea>
+            <input type="text" id="move-rat-${escapeHtml(ref)}" placeholder="Why this beats them (rationale)" />
+            <select id="move-urg-${escapeHtml(ref)}">
+              <option value="high">High urgency</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <button class="btn-primary" style="align-self:end" onclick="addMoveFromForm('${safeRef}','${safeBrand}')">+ Save Move</button>
+          </div>
+        </div>`;
+    }
+
+    function renderMovesFor(ref, moves) {
+      const el = document.getElementById('moves-list-' + ref);
+      if (!el) return;
+      if (!moves.length) {
+        el.innerHTML = '<span style="color:var(--text-dimmer);font-style:italic;font-size:11px">No counter-moves yet.</span>';
+        return;
+      }
+      el.innerHTML = moves.map(m => `
+        <div class="move-card urgency-${m.urgency || 'medium'}">
+          <div class="move-text">${escapeHtml(m.move)}</div>
+          ${m.rationale ? `<div class="move-rationale">${escapeHtml(m.rationale)}</div>` : ''}
+          <div class="move-meta">
+            <span class="urgency-pill ${m.urgency || 'medium'}">${m.urgency || 'medium'}</span>
+            <span class="move-status-pill ${m.status}" onclick="cycleStatus('${m.id}','${m.status}','${ref.replace(/'/g, "\\'")}')">${(m.status || 'planned').replace('_', ' ')}</span>
+            <span style="color:var(--text-dimmer);font-size:10px;font-family:var(--font-mono)">${new Date(m.created_at).toLocaleDateString()}</span>
+            <button class="btn-danger" style="padding:2px 8px;font-size:9px;margin-left:auto" onclick="deleteMove('${m.id}','${ref.replace(/'/g, "\\'")}')">× Delete</button>
+          </div>
+        </div>`).join('');
+    }
+
+    async function addMoveFromForm(ref, brand) {
+      const move = (document.getElementById('move-input-' + ref).value || '').trim();
+      const rat  = (document.getElementById('move-rat-' + ref).value || '').trim();
+      const urg  = document.getElementById('move-urg-' + ref).value;
+      if (!move) return;
+      await addCounterMove(ref, brand, move, rat, urg);
+      document.getElementById('move-input-' + ref).value = '';
+      document.getElementById('move-rat-' + ref).value = '';
+    }
+
+    async function addCounterMove(ref, brand, move, rationale, urgency) {
+      try {
+        const r = await fetch('/api/competitors/moves', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference: ref, brand: brand, move: move, rationale: rationale, urgency: urgency }),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          loadMovesFor(ref);
+        } else {
+          alert(j.error || 'Could not save move');
+        }
+      } catch (e) { alert('Network error: ' + e.message); }
+    }
+
+    async function cycleStatus(moveId, currentStatus, ref) {
+      const order = ['planned', 'in_progress', 'shipped', 'dropped'];
+      const next = order[(order.indexOf(currentStatus) + 1) % order.length];
+      await fetch('/api/competitors/moves/' + encodeURIComponent(moveId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next }),
+      });
+      loadMovesFor(ref);
+    }
+
+    async function deleteMove(moveId, ref) {
+      if (!confirm('Delete this counter-move?')) return;
+      await fetch('/api/competitors/moves/' + encodeURIComponent(moveId), { method: 'DELETE' });
+      loadMovesFor(ref);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // CAMPAIGN / HASHTAG SEARCH
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    async function loadRecentHashtags() {
+      try {
+        const r = await fetch('/api/hashtag/recent');
+        const j = await r.json();
+        if (!j.ok) return;
+        const list = j.data || [];
+        const box = document.getElementById('recent-hashtags');
+        if (!list.length) {
+          box.innerHTML = '<span style="color:var(--text-dimmer);font-size:11px;font-family:var(--font-mono);">No recent searches.</span>';
+          return;
+        }
+        box.innerHTML = '<span style="color:var(--text-dim);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-mono);margin-right:6px">Recent:</span>' +
+          list.slice(0, 10).map(h =>
+            `<span class="recent-hashtag-chip" onclick="loadHashtagCached('${escapeHtml(h.hashtag).replace(/'/g, "\\'")}')">${escapeHtml(h.hashtag)}</span>`
+          ).join('');
+      } catch (e) {
+        console.error('Recent hashtags error:', e);
+      }
+    }
+
+    async function runHashtagSearch(forceRefresh = false) {
+      const input = document.getElementById('hashtag-input');
+      const tag = input.value.trim();
+      if (!tag) { alert('Enter a hashtag (e.g. #ShowSomeLoveToMum)'); return; }
+
+      const container = document.getElementById('hashtag-results-container');
+      container.innerHTML = `
+        <div class="loading-state" style="padding:60px;text-align:center;color:var(--text-dim)">
+          <div class="spinner"></div>
+          <div class="loading-text">Searching across platforms… ${forceRefresh ? '(forcing refresh)' : ''}</div>
+          <div style="font-size:11px;color:var(--text-dimmer);margin-top:10px">Scanning YouTube, Instagram, Facebook, X, TikTok, LinkedIn, Threads</div>
+        </div>`;
+
+      try {
+        const r = await fetch('/api/hashtag/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            hashtag: tag,
+            per_platform: 15,
+            refresh: forceRefresh
+          })
+        });
+        const j = await r.json();
+        if (j.ok) {
+          HASHTAG_DATA = j.data;
+          ACTIVE_PLATFORM = 'all';
+          renderHashtagResults();
+          loadRecentHashtags();
+        } else {
+          container.innerHTML = `<div class="inline-alert">⚠ ${escapeHtml(j.error || 'Search failed')}</div>`;
+        }
+      } catch (e) {
+        container.innerHTML = `<div class="inline-alert">⚠ Network error: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    async function loadHashtagCached(tag) {
+      document.getElementById('hashtag-input').value = tag;
+      try {
+        const r = await fetch('/api/hashtag/' + encodeURIComponent(tag));
+        const j = await r.json();
+        if (j.ok) {
+          HASHTAG_DATA = j.data;
+          ACTIVE_PLATFORM = 'all';
+          renderHashtagResults();
+        } else {
+          runHashtagSearch();
+        }
+      } catch (e) {
+        runHashtagSearch();
+      }
+    }
+
+    function renderHashtagResults() {
+      const container = document.getElementById('hashtag-results-container');
+      if (!HASHTAG_DATA) return;
+
+      const d = HASHTAG_DATA;
+
+      // Build platform tabs + summary
+      const tabs = [{ key: 'all', label: 'All Platforms', count: d.total_posts }]
+        .concat((d.platforms || []).map(p => ({
+          key: p.key, label: p.label, count: p.post_count
+        })));
+
+      const tabsHtml = tabs.map(t => `
+        <div class="platform-tab ${ACTIVE_PLATFORM === t.key ? 'active' : ''}"
+             onclick="setActivePlatform('${t.key}')">
+          <span>${escapeHtml(t.label)}</span>
+          <span class="pt-count">${t.count || 0}</span>
+        </div>`).join('');
+
+      // Platform summary cards
+      const summaryHtml = (d.platforms || []).map(p => `
+        <div class="platform-summary">
+          <div class="platform-summary-label">${escapeHtml(p.label)}</div>
+          <div class="platform-summary-count ${p.post_count === 0 ? 'zero' : ''}">${p.post_count}</div>
+          ${p.has_metrics ? `<div style="font-size:10px;color:var(--electric);margin-top:6px;font-family:var(--font-mono);">Reach: ${formatNumber(p.reach || 0)}</div>` : ''}
+        </div>`).join('');
+
+      // Post list (filtered by active platform)
+      let posts = [];
+      if (ACTIVE_PLATFORM === 'all') {
+        Object.values(d.by_platform || {}).forEach(list => posts.push(...list));
+      } else {
+        posts = (d.by_platform || {})[ACTIVE_PLATFORM] || [];
+      }
+
+      // Sort: posts with metrics (YouTube) first by reach, then others
+      posts.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+
+      const postsHtml = posts.length
+        ? posts.map(p => renderPostCard(p)).join('')
+        : `<div class="empty-state"><div class="empty-icon">#</div><h3>No posts found on this platform</h3><p>Try another platform tab or refresh the search.</p></div>`;
+
+      // Header card
+      const headerHtml = `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+            <div>
+              <div style="font-size:22px;font-weight:800;color:var(--electric);margin-bottom:4px;">${escapeHtml(d.hashtag)}</div>
+              <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);">
+                ${d.total_posts} posts found across ${d.platforms.filter(p => p.post_count > 0).length} platforms
+                ${d.total_youtube_reach ? `· <span style="color:var(--electric)">YouTube reach: ${formatNumber(d.total_youtube_reach)}</span>` : ''}
+                ${d.from_cache ? '· <span style="color:var(--warning)">Cached</span>' : ''}
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--text-dimmer);font-family:var(--font-mono);">
+              ${d.generated_at ? 'Generated ' + new Date(d.generated_at).toLocaleString() : ''}
+            </div>
+          </div>
+        </div>`;
+
+      container.innerHTML = `
+        ${headerHtml}
+        <div class="platform-summary-grid">${summaryHtml}</div>
+        <div class="platform-tabs">${tabsHtml}</div>
+        <div class="post-list">${postsHtml}</div>`;
+
+      // Note about scraping limits if YouTube is the only populated platform
+      const otherPlatformPosts = (d.platforms || []).filter(p => p.key !== 'youtube' && p.post_count > 0).length;
+      if (d.total_posts > 0 && otherPlatformPosts === 0) {
+        container.innerHTML += `
+          <div class="inline-alert" style="margin-top:16px">
+            ⚠ Only YouTube returned results this run. Social platforms (Instagram, Facebook, X, TikTok) aggressively block scrapers — results from those sources depend on the hashtag being indexed in Google/Bing/DuckDuckGo at search time. Try again with <strong>↻ Refresh</strong>, or check back later.
+          </div>`;
+      }
+    }
+
+    function setActivePlatform(key) {
+      ACTIVE_PLATFORM = key;
+      renderHashtagResults();
+    }
+
+    function renderPostCard(p) {
+      const plat = p.platform || 'other';
+      const label = p.platform_label || plat;
+      const hasMetrics = typeof p.view_count === 'number' && p.view_count > 0;
+      const publishDate = p.published_at ? new Date(p.published_at).toLocaleDateString() : '';
+
+      const metaItems = [];
+      if (p.channel_title)  metaItems.push(`<span class="pm-item">📺 ${escapeHtml(p.channel_title)}</span>`);
+      if (publishDate)      metaItems.push(`<span class="pm-item">📅 ${publishDate}</span>`);
+      if (hasMetrics) {
+        metaItems.push(`<span class="pm-item pm-reach">👁 ${formatNumber(p.view_count)} reach</span>`);
+        if (p.like_count)    metaItems.push(`<span class="pm-item">👍 ${formatNumber(p.like_count)}</span>`);
+        if (p.comment_count) metaItems.push(`<span class="pm-item">💬 ${formatNumber(p.comment_count)}</span>`);
+      }
+      if (p.has_hashtag_in_snippet) metaItems.push(`<span class="tag-matched">hashtag matched</span>`);
+
+      return `
+        <div class="post-card">
+          <div class="post-card-head">
+            <span class="post-platform-badge ${plat}">${escapeHtml(label)}</span>
+            ${p.thumbnail ? `<img src="${p.thumbnail}" style="width:80px;height:45px;object-fit:cover;border-radius:4px;border:1px solid var(--border);" onerror="this.style.display='none'">` : ''}
+          </div>
+          <div class="post-title">
+            <a href="${p.url}" target="_blank" rel="noopener">${escapeHtml(p.title || '(untitled post)')}</a>
+          </div>
+          ${p.snippet ? `<div class="post-snippet">${escapeHtml(truncate(p.snippet, 300))}</div>` : ''}
+          <div class="post-meta">${metaItems.join('')}</div>
+          <div class="post-url" style="margin-top:6px;"><a href="${p.url}" target="_blank" rel="noopener" style="color:var(--text-dimmer)">${escapeHtml(truncate(p.url, 100))}</a></div>
+        </div>`;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // BREAKDOWN — platform × time × organic/boosted
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    let BREAKDOWN_DATA = null;
+    let BOOSTED_FLAGS   = {};
+
+    function populateBreakdownFilters() {
+      const brandSel = document.getElementById('bd-brand-filter');
+      const monthSel = document.getElementById('bd-month-filter');
+      if (brandSel && brandSel.options.length <= 1 && APP_DATA && APP_DATA.brands) {
+        APP_DATA.brands.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name; opt.textContent = name;
+          brandSel.appendChild(opt);
+        });
+      }
+      if (monthSel && monthSel.options.length <= 1) {
+        fetch('/api/months').then(r => r.json()).then(j => {
+          if (!j.ok) return;
+          (j.data || []).forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.month; opt.textContent = m.month;
+            monthSel.appendChild(opt);
+          });
+        }).catch(() => {});
+      }
+    }
+
+    async function loadBreakdown() {
+      populateBreakdownFilters();
+      const brand  = document.getElementById('bd-brand-filter')?.value || '';
+      const month  = document.getElementById('bd-month-filter')?.value || '';
+      const status = document.getElementById('bd-status-filter')?.value || 'all';
+
+      const params = new URLSearchParams();
+      if (brand) params.set('brand', brand);
+      if (month) params.set('month', month);
+      if (status) params.set('boosted', status);
+
+      try {
+        const [bdRes, flagsRes] = await Promise.all([
+          fetch('/api/breakdown?' + params.toString()),
+          fetch('/api/boosted'),
+        ]);
+        const bd = await bdRes.json();
+        const fl = await flagsRes.json();
+        if (fl.ok) BOOSTED_FLAGS = fl.data || {};
+        if (bd.ok) {
+          BREAKDOWN_DATA = bd.data;
+          renderBreakdown();
+        }
+      } catch (e) {
+        console.error('Breakdown load error:', e);
+      }
+    }
+
+    function renderBreakdown() {
+      if (!BREAKDOWN_DATA) return;
+      const yt = BREAKDOWN_DATA.youtube || {};
+      const split = yt.per_boosted || {};
+      const totals = yt.totals || {};
+
+      // Summary cards
+      const cardsEl = document.getElementById('bd-summary-cards');
+      if (cardsEl) {
+        const pct = (n) => totals.videos ? Math.round((n / totals.videos) * 100) : 0;
+        cardsEl.innerHTML = `
+          <div class="reach-card" style="--accent:var(--electric)"><div class="reach-card-label">Total Videos</div><div class="reach-card-value">${formatNumber(totals.videos || 0)}</div><div class="reach-card-sub">In current filter</div></div>
+          <div class="reach-card" style="--accent:var(--laser-blue)"><div class="reach-card-label">Total Reach</div><div class="reach-card-value" style="color:var(--laser-blue)">${formatNumber(totals.reach || 0)}</div><div class="reach-card-sub">Views</div></div>
+          <div class="reach-card" style="--accent:var(--neon-green)"><div class="reach-card-label">Organic</div><div class="reach-card-value" style="color:var(--neon-green)">${formatNumber(split.organic?.videos || 0)}</div><div class="reach-card-sub">${pct(split.organic?.videos || 0)}% of videos</div></div>
+          <div class="reach-card" style="--accent:var(--hot-pink)"><div class="reach-card-label">Boosted</div><div class="reach-card-value" style="color:var(--hot-pink)">${formatNumber(split.boosted?.videos || 0)}</div><div class="reach-card-sub">${pct(split.boosted?.videos || 0)}% of videos</div></div>
+          <div class="reach-card" style="--accent:var(--warning)"><div class="reach-card-label">Unchecked</div><div class="reach-card-value" style="color:var(--warning)">${formatNumber(split.unchecked?.videos || 0)}</div><div class="reach-card-sub">${pct(split.unchecked?.videos || 0)}% of videos</div></div>
+        `;
+      }
+
+      // Organic vs boosted reach chart
+      destroyChart('boostedSplit');
+      const splitCtx = document.getElementById('chartBoostedSplit');
+      if (splitCtx) {
+        CHARTS.boostedSplit = new Chart(splitCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Organic', 'Boosted', 'Unchecked'],
+            datasets: [{
+              data: [split.organic?.reach || 0, split.boosted?.reach || 0, split.unchecked?.reach || 0],
+              backgroundColor: ['#00d4ff', '#ff006e', '#8895a7'],
+              borderColor: '#0d0f12',
+              borderWidth: 4,
+            }],
+          },
+          options: { ...CHART_DEFAULTS, cutout: '72%' },
+        });
+      }
+
+      // Reach by month
+      destroyChart('boostedTimeline');
+      const timeCtx = document.getElementById('chartBoostedTimeline');
+      const months = (yt.per_month || []).slice().reverse();
+      if (timeCtx && months.length) {
+        CHARTS.boostedTimeline = new Chart(timeCtx, {
+          type: 'bar',
+          data: {
+            labels: months.map(m => m.month),
+            datasets: [
+              { label: 'Organic', data: months.map(m => m.organic || 0), backgroundColor: 'rgba(0,212,255,0.7)', borderRadius: 4 },
+              { label: 'Boosted', data: months.map(m => m.boosted || 0), backgroundColor: 'rgba(255,0,110,0.7)', borderRadius: 4 },
+            ],
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            scales: {
+              x: { ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#252b38' } },
+              y: { ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#252b38' } },
+            },
+          },
+        });
+      }
+
+      // Cross-platform post counts (best-effort, not reach)
+      const platEl = document.getElementById('bd-platform-posts');
+      const cpc = BREAKDOWN_DATA.cross_platform_campaigns || {};
+      if (platEl) {
+        const rows = (cpc.per_platform || []).filter(p => p.post_count > 0);
+        platEl.innerHTML = rows.length
+          ? rows.map(p => `<span style="display:inline-block;margin:4px 10px 4px 0;padding:4px 10px;border:1px solid var(--border);border-radius:6px">${escapeHtml(p.platform)}: <strong>${p.post_count}</strong> posts</span>`).join('')
+          : '<em>No cached campaign-hashtag data yet — run a search on the Campaign Search page.</em>';
+      }
+
+      // Video table with boosted toggle
+      const tableEl = document.getElementById('bd-video-table');
+      if (tableEl) {
+        const rows = (yt.per_video || []).slice(0, 100);
+        tableEl.innerHTML = rows.length ? `
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="text-align:left;color:var(--text-dim)">
+              <th style="padding:6px">Video</th><th>Brand</th><th>Month</th><th>Reach</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(v => `
+                <tr style="border-top:1px solid var(--border)">
+                  <td style="padding:6px;max-width:280px"><a href="${v.video_url}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${escapeHtml(truncate(v.title || '', 60))}</a></td>
+                  <td>${escapeHtml(v.brand || '—')}</td>
+                  <td>${escapeHtml(v.month || '—')}</td>
+                  <td>${formatNumber(v.reach || 0)}</td>
+                  <td>
+                    <select onchange="setBoostedStatus('${v.video_id}', this.value)" style="font-size:11px">
+                      <option value="unchecked" ${v.status === 'unchecked' ? 'selected' : ''}>Unchecked</option>
+                      <option value="organic" ${v.status === 'organic' ? 'selected' : ''}>Organic</option>
+                      <option value="boosted" ${v.status === 'boosted' ? 'selected' : ''}>Boosted</option>
+                    </select>
+                  </td>
+                  <td><a href="#" onclick="openTransparencyCenter('${escapeHtml((v.brand || '').replace(/'/g, "\\'"))}'); return false;" style="color:var(--electric);font-size:11px">Check ↗</a></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>` : '<em>No videos match these filters.</em>';
+      }
+    }
+
+    async function setBoostedStatus(videoId, status) {
+      if (!videoId) return;
+      try {
+        if (status === 'unchecked') {
+          await fetch('/api/boosted/' + encodeURIComponent(videoId), { method: 'DELETE' });
+        } else {
+          await fetch('/api/boosted', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ video_id: videoId, boosted: status === 'boosted', source: 'manual' }),
+          });
+        }
+        loadBreakdown();
+      } catch (e) {
+        alert('Could not save status: ' + e.message);
+      }
+    }
+
+    async function openTransparencyCenter(advertiserName) {
+      try {
+        const r = await fetch('/api/boosted/transparency-url?advertiser=' + encodeURIComponent(advertiserName || ''));
+        const j = await r.json();
+        window.open((j.data && j.data.url) || 'https://adstransparency.google.com', '_blank', 'noopener');
+      } catch (e) {
+        window.open('https://adstransparency.google.com', '_blank', 'noopener');
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // AUDIENCE INSIGHTS — YouTube Analytics (demographics, geography, watch stats)
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    const AUDIENCE_BRANDS = ['Munch It', 'Indomie', 'Colgate', 'Hypo', 'Power Oil', 'Nutrify', 'Lush', 'Minimie'];
+    let AUDIENCE_BRAND_POPULATED = false;
+
+    function populateAudienceBrandSelect() {
+      const sel = document.getElementById('aud-brand-select');
+      if (!sel || AUDIENCE_BRAND_POPULATED) return;
+      sel.innerHTML = AUDIENCE_BRANDS.map(b => `<option value="${b}">${b}</option>`).join('');
+      AUDIENCE_BRAND_POPULATED = true;
+    }
+
+    async function loadAudienceInsights(force) {
+      populateAudienceBrandSelect();
+      const brand = document.getElementById('aud-brand-select')?.value || AUDIENCE_BRANDS[0];
+      const days  = document.getElementById('aud-days-select')?.value || '90';
+      const contentEl = document.getElementById('aud-content');
+      if (!contentEl) return;
+
+      contentEl.innerHTML = '<div style="color:var(--text-dim);font-size:13px">Loading…</div>';
+
+      try {
+        const params = new URLSearchParams({ days });
+        if (force) params.set('force', '1');
+        const r = await fetch(`/api/analytics/${encodeURIComponent(brand)}?${params.toString()}`);
+        const j = await r.json();
+        renderAudienceInsights(j);
+      } catch (e) {
+        contentEl.innerHTML = `<div style="color:var(--hot-pink);font-size:13px">Failed to load: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderAudienceInsights(data) {
+      const contentEl = document.getElementById('aud-content');
+      if (!contentEl) return;
+
+      if (!data || !data.ok) {
+        contentEl.innerHTML = `
+          <div class="comp-section-box">
+            <div style="color:var(--warning);font-size:13px;line-height:1.6">
+              ⚠ ${escapeHtml((data && data.reason) || 'Could not load audience data.')}
+            </div>
+          </div>`;
+        return;
+      }
+
+      const ov = data.overview || {};
+      const fmtDur = (sec) => {
+        sec = Math.round(sec || 0);
+        const m = Math.floor(sec / 60), s = sec % 60;
+        return `${m}:${String(s).padStart(2, '0')}`;
+      };
+
+      // Overview cards
+      let html = `<div class="reach-summary-grid">
+        <div class="reach-card"><div class="reach-card-label">Views</div><div class="reach-card-value">${formatNumber(ov.views || 0)}</div><div class="reach-card-sub">Last ${data.date_range.days} days</div></div>
+        <div class="reach-card"><div class="reach-card-label">Watch Time</div><div class="reach-card-value" style="color:var(--laser-blue)">${formatNumber(Math.round((ov.estimatedMinutesWatched || 0) / 60))}h</div><div class="reach-card-sub">${formatNumber(ov.estimatedMinutesWatched || 0)} minutes</div></div>
+        <div class="reach-card"><div class="reach-card-label">Avg View Duration</div><div class="reach-card-value" style="color:var(--neon-green)">${fmtDur(ov.averageViewDuration)}</div><div class="reach-card-sub">${(ov.averageViewPercentage || 0).toFixed(1)}% of video</div></div>
+        <div class="reach-card"><div class="reach-card-label">Subscribers</div><div class="reach-card-value" style="color:${(ov.subscribersGained||0) - (ov.subscribersLost||0) >= 0 ? 'var(--neon-green)' : 'var(--hot-pink)'}">${(ov.subscribersGained||0) - (ov.subscribersLost||0) >= 0 ? '+' : ''}${formatNumber((ov.subscribersGained||0) - (ov.subscribersLost||0))}</div><div class="reach-card-sub">+${formatNumber(ov.subscribersGained||0)} / -${formatNumber(ov.subscribersLost||0)}</div></div>
+      </div>`;
+
+      html += `<div class="chart-grid" style="margin-top:16px">
+        <div class="chart-box">
+          <div class="chart-header"><div class="chart-title">Age &amp; Gender</div></div>
+          <div class="chart-canvas-wrap"><canvas id="chartAudienceDemo"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-header"><div class="chart-title">Device Type</div></div>
+          <div class="chart-canvas-wrap short"><canvas id="chartAudienceDevice"></canvas></div>
+        </div>
+      </div>`;
+
+      const geoRows = (data.geography || []).map(g => `
+        <tr style="border-top:1px solid var(--border)">
+          <td style="padding:6px">${escapeHtml(g.country || '—')}</td>
+          <td>${formatNumber(g.views || 0)}</td>
+          <td>${formatNumber(Math.round((g.estimatedMinutesWatched || 0) / 60))}h</td>
+        </tr>`).join('');
+      html += `<div class="comp-section-box" style="margin-top:16px">
+        <div class="comp-section-title">Top Countries</div>
+        ${geoRows ? `<table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="text-align:left;color:var(--text-dim)"><th style="padding:6px">Country</th><th>Views</th><th>Watch Time</th></tr></thead>
+          <tbody>${geoRows}</tbody>
+        </table>` : '<em style="color:var(--text-dim);font-size:12px">No geography data for this window.</em>'}
+      </div>`;
+
+      const trafficRows = (data.traffic_sources || []).map(t => `
+        <tr style="border-top:1px solid var(--border)">
+          <td style="padding:6px">${escapeHtml(t.insightTrafficSourceType || '—')}</td>
+          <td>${formatNumber(t.views || 0)}</td>
+        </tr>`).join('');
+      html += `<div class="comp-section-box" style="margin-top:16px">
+        <div class="comp-section-title">Traffic Sources</div>
+        ${trafficRows ? `<table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="text-align:left;color:var(--text-dim)"><th style="padding:6px">Source</th><th>Views</th></tr></thead>
+          <tbody>${trafficRows}</tbody>
+        </table>` : '<em style="color:var(--text-dim);font-size:12px">No traffic source data for this window.</em>'}
+      </div>`;
+
+      contentEl.innerHTML = html;
+
+      // Age/gender chart — grouped bar, one group per age bracket, male/female/other as series
+      destroyChart('audienceDemo');
+      const demoCtx = document.getElementById('chartAudienceDemo');
+      const demo = data.demographics || [];
+      const ageGroups = [...new Set(demo.map(d => d.ageGroup))].sort();
+      const genders = [...new Set(demo.map(d => d.gender))];
+      const genderColors = { male: 'rgba(0,212,255,0.75)', female: 'rgba(255,0,110,0.75)', user_specified: 'rgba(155,155,180,0.75)' };
+      if (demoCtx && ageGroups.length) {
+        CHARTS.audienceDemo = new Chart(demoCtx, {
+          type: 'bar',
+          data: {
+            labels: ageGroups.map(a => (a || '').replace('age', '')),
+            datasets: genders.map(g => ({
+              label: g,
+              data: ageGroups.map(a => {
+                const row = demo.find(d => d.ageGroup === a && d.gender === g);
+                return row ? row.viewerPercentage : 0;
+              }),
+              backgroundColor: genderColors[g] || 'rgba(150,150,150,0.7)',
+              borderRadius: 4,
+            })),
+          },
+          options: {
+            ...CHART_DEFAULTS,
+            scales: {
+              x: { ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 10 } }, grid: { display: false } },
+              y: { ticks: { color: '#8895a7', font: { family: 'JetBrains Mono', size: 10 }, callback: v => v + '%' }, grid: { color: '#252b38' } },
+            },
+          },
+        });
+      }
+
+      // Device type — doughnut
+      destroyChart('audienceDevice');
+      const devCtx = document.getElementById('chartAudienceDevice');
+      const devices = data.devices || [];
+      if (devCtx && devices.length) {
+        CHARTS.audienceDevice = new Chart(devCtx, {
+          type: 'doughnut',
+          data: {
+            labels: devices.map(d => d.deviceType),
+            datasets: [{
+              data: devices.map(d => d.views),
+              backgroundColor: ['#00d4ff', '#ff006e', '#39ff14', '#8895a7', '#ffb800'],
+              borderColor: '#0d0f12', borderWidth: 4,
+            }],
+          },
+          options: { ...CHART_DEFAULTS, cutout: '68%' },
+        });
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // INIT
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    loadAllData();
+    setInterval(updateClock, 1000);
+    updateClock();
+    setInterval(loadAllData, 300000);  // Auto-refresh every 5 minutes
+    setInterval(pollHealth, 30000);    // Health check every 30 seconds
+    pollHealth();
+  </script>
+
+</body>
+
+</html>

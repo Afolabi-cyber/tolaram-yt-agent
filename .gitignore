@@ -1,0 +1,45 @@
+# ── Secrets ───────────────────────────────────────────────
+.env
+
+# ── Data (local only, never commit real data) ─────────────
+data/*.json
+data/
+
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ──────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Logs ─────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Reports ───────────────────────────────────────────────
+reports/
+
+# ── OS & IDE ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Deployment ────────────────────────────────────────────
+.railway/
+.heroku/
+
+client_secret.json
