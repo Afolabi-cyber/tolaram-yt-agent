@@ -72,6 +72,20 @@ services:
         sync: false
       - key: BRAND_MANAGER_COLGATE
         sync: false
+      - key: BRAND_MANAGER_INDOMIE
+        sync: false
+      - key: BRAND_MANAGER_HYPO
+        sync: false
+      - key: BRAND_MANAGER_POWER_OIL
+        sync: false
+      - key: BRAND_MANAGER_NUTRIFY
+        sync: false
+      - key: BRAND_MANAGER_LUSH
+        sync: false
+      - key: BRAND_MANAGER_MINIMIE
+        sync: false
+      - key: BRAND_MANAGER_MUNCH_IT
+        sync: false
       - key: YOUTUBE_ANALYTICS_CLIENT_ID
         sync: false
       - key: YOUTUBE_ANALYTICS_CLIENT_SECRET
