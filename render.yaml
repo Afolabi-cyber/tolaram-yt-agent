@@ -22,6 +22,22 @@ services:
       # render.yaml gets committed to the repo, so these stay blank on purpose.
       - key: YOUTUBE_API_KEY
         sync: false
+      - key: INDOMIE_API_KEY
+        sync: false
+      - key: COLGATE_API_KEY
+        sync: false
+      - key: HYPO_API_KEY
+        sync: false
+      - key: POWER_OIL_API_KEY
+        sync: false
+      - key: NUTRIFY_API_KEY
+        sync: false
+      - key: LUSH_API_KEY
+        sync: false
+      - key: MINIMIE_API_KEY
+        sync: false
+      - key: MUNCH_IT_API_KEY
+        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: ANTHROPIC_API_KEY

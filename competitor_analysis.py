@@ -679,10 +679,16 @@ def run_brand_scan(brand: Optional[str] = None,
         own_by_brand[v.get("brand", "Unknown")].append(v)
 
     with _scan_lock:
-        youtube = build("youtube", "v3", developerKey=api_key)
         results: Dict[str, List[Dict]] = {}
 
         for tol_brand in brands_to_scan:
+            # Same per-brand key pattern agent.py uses for own-video fetches —
+            # keeps each brand's competitor scans on that brand's own quota
+            # instead of all brands sharing one key's daily limit.
+            brand_key_env = f"{tol_brand.upper().replace(' ', '_')}_API_KEY"
+            brand_api_key = os.getenv(brand_key_env) or api_key
+            youtube = build("youtube", "v3", developerKey=brand_api_key)
+
             comps = pairings.get(tol_brand, [])
             brand_results: List[Dict] = []
             logger.info(f"Scanning {len(comps)} competitors for {tol_brand}")
