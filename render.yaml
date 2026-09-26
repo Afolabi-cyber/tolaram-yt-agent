@@ -17,6 +17,14 @@ services:
         value: 3.11.9
       - key: LOG_LEVEL
         value: INFO
+      - key: VIDEOS_PER_CHANNEL
+        value: "30"    # routine runs — a channel's very first run ignores this, see BACKFILL_VIDEOS_PER_CHANNEL
+      - key: BACKFILL_VIDEOS_PER_CHANNEL
+        value: "1000"  # used ONCE per channel, automatically, only when it has zero videos on file yet
+      - key: COMMENTS_PER_VIDEO
+        value: "100"
+      - key: CRISIS_KEYWORDS
+        value: "reaction,sick,hospital,poison,hurt,injury,death,died,allergic,lawsuit,dangerous"
       # Everything below is a secret — set the real value in the Render
       # dashboard's Environment tab after the service is created, not here.
       # render.yaml gets committed to the repo, so these stay blank on purpose.
@@ -40,7 +48,13 @@ services:
         sync: false
       - key: GEMINI_API_KEY
         sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: GEMINI_RPM
+        sync: false
       - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CHANNEL_ID
         sync: false
       - key: CHANNEL_INDOMIE
         sync: false
