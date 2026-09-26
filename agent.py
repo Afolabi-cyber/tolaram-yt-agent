@@ -76,6 +76,10 @@ YOUTUBE_API_KEY    = os.getenv("YOUTUBE_API_KEY") or os.getenv("API_KEY")
 ANTHROPIC_API_KEY  = os.getenv("ANTHROPIC_API_KEY")
 GEMINI_API_KEY     = os.getenv("GEMINI_API_KEY")
 VIDEOS_PER_CHANNEL = int(os.getenv("VIDEOS_PER_CHANNEL", "5"))
+# Used only the very first time a channel is ever processed (it has zero
+# videos on file yet) — a one-time deep pull so history isn't permanently
+# capped at whatever VIDEOS_PER_CHANNEL is set to for routine runs.
+BACKFILL_VIDEOS_PER_CHANNEL = int(os.getenv("BACKFILL_VIDEOS_PER_CHANNEL", "1000"))
 COMMENTS_PER_VIDEO = int(os.getenv("COMMENTS_PER_VIDEO", "50"))
 ANTHROPIC_RPM      = 50   # request/min ceiling for whichever LLM backend is active
 CRISIS_KEYWORDS    = os.getenv(
@@ -142,7 +146,7 @@ def run_agent() -> dict:
     logger.info("=" * 60)
     logger.info("🚀  TOLARAM YOUTUBE AGENT — Starting Run")
     logger.info(f"    Channels  : {list(CHANNELS.keys())}")
-    logger.info(f"    Videos    : {VIDEOS_PER_CHANNEL} per channel")
+    logger.info(f"    Videos    : {VIDEOS_PER_CHANNEL} per channel (routine) / {BACKFILL_VIDEOS_PER_CHANNEL} on a channel's first-ever run")
     logger.info(f"    Comments  : {COMMENTS_PER_VIDEO} per video")
     logger.info("=" * 60)
 
@@ -191,6 +195,10 @@ def run_agent() -> dict:
     all_channel_stats = []
     all_videos = load_json("all_videos.json", default=[])
     existing_video_ids = {v["video_id"] for v in all_videos}
+    # Which channels already have at least one video on file — used below to
+    # tell a genuine first-ever run (needs a deep backfill) apart from every
+    # run after that (only needs to look at the last handful of uploads).
+    channels_with_history = {v.get("channel_id") for v in all_videos if v.get("channel_id")}
     
     all_comments_data = load_json("all_comments.json", default=[])
     existing_comment_ids = {c["comment_id"] for c in all_comments_data if "comment_id" in c}
@@ -225,8 +233,13 @@ def run_agent() -> dict:
             f"    ✅ {channel_info.get('title', label)} metadata fetched."
         )
 
-        # 2. Recent videos
-        videos = yt.get_recent_videos(channel_id, max_results=VIDEOS_PER_CHANNEL)
+        # 2. Recent videos — deep backfill on this channel's first-ever run,
+        # shallow on every run after (it already has history on file).
+        is_first_run = channel_id not in channels_with_history
+        fetch_limit = BACKFILL_VIDEOS_PER_CHANNEL if is_first_run else VIDEOS_PER_CHANNEL
+        if is_first_run:
+            logger.info(f"    🔎 {label}: no history on file yet — backfilling up to {fetch_limit} videos.")
+        videos = yt.get_recent_videos(channel_id, max_results=fetch_limit)
         if not videos:
             logger.warning(f"    No videos found for {label}.")
             return
